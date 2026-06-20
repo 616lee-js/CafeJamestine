@@ -10,6 +10,10 @@ create table if not exists public.test_items (
 
 alter table public.test_items enable row level security;
 
+-- Secure-by-default: grant table access to authenticated (RLS scopes to own rows below);
+-- service_role for admin/verification. anon gets nothing.
+grant select, insert, update, delete on public.test_items to authenticated, service_role;
+
 create policy "test_items_select_own" on public.test_items
   for select using (auth.uid() = user_id);
 

@@ -16,5 +16,9 @@ create table if not exists public.invite_codes (
 -- clients get zero rows. Only the service-role key (which bypasses RLS) can read/write.
 alter table public.invite_codes enable row level security;
 
+-- This project is secure-by-default (new tables grant nothing). The service-role path
+-- needs an explicit table grant; anon/authenticated are deliberately given none.
+grant select, insert, update, delete on public.invite_codes to service_role;
+
 -- Generate a starter invite code (change the value, or add more rows as needed):
 -- insert into public.invite_codes (code) values ('LET-ME-IN-001');
