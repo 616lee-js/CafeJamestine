@@ -7,6 +7,7 @@ import { signOut } from "./actions";
 
 const NAV = [
   { href: "/coffees", label: "Coffees" },
+  { href: "/recipes", label: "Recipes" },
   { href: "/equipment", label: "Equipment" },
 ];
 
