@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard"];
+const PROTECTED_PREFIXES = ["/coffees", "/equipment", "/recipes", "/sessions"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 // Refreshes the auth session on every request and enforces route protection.
@@ -47,7 +47,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/coffees";
     return NextResponse.redirect(url);
   }
 
