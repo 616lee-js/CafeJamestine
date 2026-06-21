@@ -16,12 +16,14 @@ export function MultiReferenceSelect({
   refColumn,
   coffeeId,
   placeholder,
+  readOnly = false,
 }: {
   table: "processes" | "varietals";
   joinTable: "coffee_processes" | "coffee_varietals";
   refColumn: "process_id" | "varietal_id";
   coffeeId: string;
   placeholder?: string;
+  readOnly?: boolean;
 }) {
   const [items, setItems] = useState<Item[]>([]);
 
@@ -63,6 +65,20 @@ export function MultiReferenceSelect({
     const supabase = createClient();
     await supabase.from(joinTable).delete().eq("id", joinId);
     setItems((prev) => prev.filter((i) => i.joinId !== joinId));
+  }
+
+  if (readOnly) {
+    return items.length === 0 ? (
+      <span className="text-sm text-muted-foreground">—</span>
+    ) : (
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((i) => (
+          <Badge key={i.joinId} variant="secondary" className="text-sm font-normal">
+            {i.name}
+          </Badge>
+        ))}
+      </div>
+    );
   }
 
   return (

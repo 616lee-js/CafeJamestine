@@ -1,8 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Coffee, SeedRow } from "@/lib/db-types";
-import { CoffeeEditor } from "./coffee-editor";
-import { BagsSection } from "./bags-section";
+import { CoffeeDetail } from "./coffee-detail";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +11,17 @@ type CoffeeWithNames = Coffee & {
   countries: Named;
   regions: Named;
   producers: Named;
-  roast_levels: Named;
 };
 
-export default async function CoffeeDetail({
+export default async function CoffeePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ new?: string }>;
 }) {
   const { id } = await params;
+  const { new: isNewParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -30,7 +31,7 @@ export default async function CoffeeDetail({
   const { data } = await supabase
     .from("coffees")
     .select(
-      "*, roasters(name), countries(name), regions(name), producers(name), roast_levels(name)",
+      "*, roasters(name), countries(name), regions(name), producers(name)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -51,20 +52,18 @@ export default async function CoffeeDetail({
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <CoffeeEditor
-        coffee={coffee}
-        names={{
-          roaster: coffee.roasters?.name ?? null,
-          country: coffee.countries?.name ?? null,
-          region: coffee.regions?.name ?? null,
-          producer: coffee.producers?.name ?? null,
-        }}
-        roastLevels={(roastLevels ?? []) as SeedRow[]}
-        userId={user.id}
-        imageUrl={imageUrl}
-      />
-      <BagsSection coffeeId={coffee.id} />
-    </div>
+    <CoffeeDetail
+      coffee={coffee}
+      names={{
+        roaster: coffee.roasters?.name ?? null,
+        country: coffee.countries?.name ?? null,
+        region: coffee.regions?.name ?? null,
+        producer: coffee.producers?.name ?? null,
+      }}
+      roastLevels={(roastLevels ?? []) as SeedRow[]}
+      userId={user.id}
+      imageUrl={imageUrl}
+      isNew={isNewParam === "1"}
+    />
   );
 }

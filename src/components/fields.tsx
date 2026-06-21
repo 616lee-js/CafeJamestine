@@ -27,6 +27,26 @@ export function Field({
   );
 }
 
+// Read-only labeled value for VIEW state. Renders nothing when empty (description page
+// shows only filled fields).
+export function ViewRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  if (value == null || value === "") return null;
+  return (
+    <div className="flex flex-col gap-0.5 py-1.5">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <span className="whitespace-pre-wrap text-sm">{value}</span>
+    </div>
+  );
+}
+
 export function TextField({
   label,
   defaultValue,

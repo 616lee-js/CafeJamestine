@@ -9,6 +9,7 @@ const NAV = [
   { href: "/coffees", label: "Coffees" },
   { href: "/recipes", label: "Recipes" },
   { href: "/equipment", label: "Equipment" },
+  { href: "/reference", label: "Reference" },
 ];
 
 export default async function AppLayout({

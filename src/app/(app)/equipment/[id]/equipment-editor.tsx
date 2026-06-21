@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import type { Equipment, SeedRow } from "@/lib/db-types";
 import { useAutosave } from "@/lib/use-autosave";
+import { subCategoryMeta } from "@/lib/equipment";
 import {
   Field,
   TextField,
@@ -38,6 +40,9 @@ export function EquipmentEditor({
   imageUrl: string | null;
 }) {
   const save = useAutosave("equipment", equipment.id);
+  const [categoryId, setCategoryId] = useState(equipment.category_id);
+  const categoryName = categories.find((c) => c.id === categoryId)?.name ?? null;
+  const subCat = subCategoryMeta(categoryName);
 
   return (
     <div className="flex flex-col gap-6">
@@ -69,8 +74,12 @@ export function EquipmentEditor({
 
         <Field label="Category">
           <Select
-            defaultValue={equipment.category_id ?? NONE}
-            onValueChange={(v) => save({ category_id: v === NONE ? null : v })}
+            value={categoryId ?? NONE}
+            onValueChange={(v) => {
+              const id = v === NONE ? null : v;
+              setCategoryId(id);
+              save({ category_id: id });
+            }}
           >
             <SelectTrigger className="h-11 w-full">
               <SelectValue placeholder="Select…" />
@@ -113,10 +122,10 @@ export function EquipmentEditor({
           onCommit={(v) => save({ manufacturer: v })}
         />
         <TextField
-          label="Type"
-          defaultValue={equipment.type}
-          placeholder="e.g. conical / flat"
-          onCommit={(v) => save({ type: v })}
+          label={subCat.label}
+          defaultValue={equipment.sub_category}
+          placeholder={subCat.eg}
+          onCommit={(v) => save({ sub_category: v })}
         />
         <NumberField
           label="Price"

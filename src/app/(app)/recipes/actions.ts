@@ -22,7 +22,7 @@ export async function createRecipe(recipeType: RecipeType) {
     .select("id")
     .single();
   if (error || !data) throw new Error(error?.message ?? "create failed");
-  redirect(`/recipes/${data.id}`);
+  redirect(`/recipes/${data.id}?new=1`);
 }
 
 export async function deleteRecipe(id: string) {

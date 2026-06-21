@@ -17,7 +17,7 @@ export async function createCoffee() {
     .select("id")
     .single();
   if (error || !data) throw new Error(error?.message ?? "create failed");
-  redirect(`/coffees/${data.id}`);
+  redirect(`/coffees/${data.id}?new=1`);
 }
 
 export async function deleteCoffee(id: string) {

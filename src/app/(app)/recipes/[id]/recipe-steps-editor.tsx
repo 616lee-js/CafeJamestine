@@ -5,9 +5,11 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { RecipeStep, RecipeType } from "@/lib/db-types";
+import { secondsToMMSS, mmssToSeconds } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const num = (s: string): number | null => {
   if (s.trim() === "") return null;
@@ -18,9 +20,11 @@ const num = (s: string): number | null => {
 export function RecipeStepsEditor({
   recipeId,
   mode,
+  readOnly = false,
 }: {
   recipeId: string;
   mode: RecipeType;
+  readOnly?: boolean;
 }) {
   const [steps, setSteps] = useState<RecipeStep[]>([]);
 
@@ -43,8 +47,7 @@ export function RecipeStepsEditor({
 
   async function addStep() {
     const supabase = createClient();
-    const nextPos =
-      steps.reduce((m, s) => Math.max(m, s.position ?? 0), 0) + 1;
+    const nextPos = steps.reduce((m, s) => Math.max(m, s.position ?? 0), 0) + 1;
     const { error } = await supabase
       .from("recipe_steps")
       .insert({ recipe_id: recipeId, position: nextPos });
@@ -73,27 +76,59 @@ export function RecipeStepsEditor({
     const b = steps[j];
     const posA = a.position ?? index + 1;
     const posB = b.position ?? j + 1;
-    // swap positions
     const supabase = createClient();
     await supabase.from("recipe_steps").update({ position: posB }).eq("id", a.id);
     await supabase.from("recipe_steps").update({ position: posA }).eq("id", b.id);
     const next = [...steps];
     next[index] = { ...b, position: posA };
     next[j] = { ...a, position: posB };
-    // keep array ordered by new positions
     next.sort((x, y) => (x.position ?? 0) - (y.position ?? 0));
     setSteps(next);
+  }
+
+  const brewed = mode === "brewed_coffee";
+
+  if (readOnly) {
+    return (
+      <div className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold">
+          {brewed ? "Steps" : "Ingredients & steps"}
+        </h2>
+        {steps.length === 0 ? (
+          <p className="text-sm text-muted-foreground">None.</p>
+        ) : (
+          <ol className="flex flex-col gap-2">
+            {steps.map((s, i) => (
+              <li key={s.id} className="rounded-lg border border-border px-3 py-2 text-sm">
+                <span className="mr-2 font-medium text-muted-foreground">{i + 1}.</span>
+                {brewed && (
+                  <span className="text-muted-foreground">
+                    {[
+                      s.timestamp_seconds != null && `@ ${secondsToMMSS(s.timestamp_seconds)}`,
+                      s.target_weight_grams != null && `to ${s.target_weight_grams} g`,
+                      s.flow_rate_ml_s != null && `${s.flow_rate_ml_s} ml/s`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                    {s.description ? " — " : ""}
+                  </span>
+                )}
+                {s.description}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
-          {mode === "brewed_coffee" ? "Steps" : "Ingredients & steps"}
-        </h2>
+        <h2 className="text-lg font-semibold">{brewed ? "Steps" : "Ingredients & steps"}</h2>
         <Button size="sm" variant="outline" onClick={addStep}>
           <Plus className="size-4" />
-          {mode === "brewed_coffee" ? "Add step" : "Add line"}
+          {brewed ? "Add step" : "Add line"}
         </Button>
       </div>
 
@@ -107,10 +142,11 @@ export function RecipeStepsEditor({
               index={i}
               count={steps.length}
               step={step}
-              mode={mode}
+              brewed={brewed}
               onUpdate={updateStep}
               onDelete={deleteStep}
               onMove={move}
+              numParse={num}
             />
           ))}
         </ol>
@@ -123,106 +159,105 @@ function StepRow({
   index,
   count,
   step,
-  mode,
+  brewed,
   onUpdate,
   onDelete,
   onMove,
+  numParse,
 }: {
   index: number;
   count: number;
   step: RecipeStep;
-  mode: RecipeType;
+  brewed: boolean;
   onUpdate: (id: string, patch: Partial<RecipeStep>) => void;
   onDelete: (id: string) => void;
   onMove: (index: number, dir: -1 | 1) => void;
+  numParse: (s: string) => number | null;
 }) {
-  const [ts, setTs] = useState(step.timestamp_seconds?.toString() ?? "");
+  const [time, setTime] = useState(secondsToMMSS(step.timestamp_seconds));
   const [tw, setTw] = useState(step.target_weight_grams?.toString() ?? "");
   const [flow, setFlow] = useState(step.flow_rate_ml_s?.toString() ?? "");
   const [desc, setDesc] = useState(step.description ?? "");
 
-  const moveCtrls = (
-    <div className="flex flex-col">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-6"
-        disabled={index === 0}
-        onClick={() => onMove(index, -1)}
-        aria-label="Move up"
-      >
-        <ArrowUp className="size-3.5" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-6"
-        disabled={index === count - 1}
-        onClick={() => onMove(index, 1)}
-        aria-label="Move down"
-      >
-        <ArrowDown className="size-3.5" />
-      </Button>
-    </div>
-  );
+  function commitTime() {
+    if (time.trim() === "") return onUpdate(step.id, { timestamp_seconds: null });
+    const sec = mmssToSeconds(time);
+    if (sec == null) {
+      toast.error("Use M:SS, e.g. 1:45");
+      setTime(secondsToMMSS(step.timestamp_seconds));
+      return;
+    }
+    setTime(secondsToMMSS(sec));
+    onUpdate(step.id, { timestamp_seconds: sec });
+  }
 
   return (
     <li className="flex items-start gap-2 rounded-lg border border-border p-2">
-      <span className="mt-2 w-5 text-center text-sm text-muted-foreground">
-        {index + 1}
-      </span>
-      {moveCtrls}
+      <span className="mt-2 w-5 text-center text-sm text-muted-foreground">{index + 1}</span>
+      <div className="flex flex-col">
+        <Button type="button" variant="ghost" size="icon" className="size-6" disabled={index === 0} onClick={() => onMove(index, -1)} aria-label="Move up">
+          <ArrowUp className="size-3.5" />
+        </Button>
+        <Button type="button" variant="ghost" size="icon" className="size-6" disabled={index === count - 1} onClick={() => onMove(index, 1)} aria-label="Move down">
+          <ArrowDown className="size-3.5" />
+        </Button>
+      </div>
       <div className="flex flex-1 flex-col gap-2">
-        {mode === "brewed_coffee" && (
+        {brewed && (
           <div className="grid grid-cols-3 gap-2">
-            <Input
-              inputMode="decimal"
-              placeholder="Time s"
-              value={ts}
-              onChange={(e) => setTs(e.target.value)}
-              onBlur={() => onUpdate(step.id, { timestamp_seconds: num(ts) })}
-              className="h-10"
-            />
-            <Input
-              inputMode="decimal"
-              placeholder="To weight g"
-              value={tw}
-              onChange={(e) => setTw(e.target.value)}
-              onBlur={() => onUpdate(step.id, { target_weight_grams: num(tw) })}
-              className="h-10"
-            />
-            <Input
-              inputMode="decimal"
-              placeholder="Flow ml/s"
-              value={flow}
-              onChange={(e) => setFlow(e.target.value)}
-              onBlur={() => onUpdate(step.id, { flow_rate_ml_s: num(flow) })}
-              className="h-10"
-            />
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Time (from start)</Label>
+              <Input
+                inputMode="numeric"
+                placeholder="M:SS e.g. 1:45"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                onBlur={commitTime}
+                className="h-10"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">To weight (g)</Label>
+              <Input
+                inputMode="decimal"
+                placeholder="e.g. 50"
+                value={tw}
+                onChange={(e) => setTw(e.target.value)}
+                onBlur={() => onUpdate(step.id, { target_weight_grams: numParse(tw) })}
+                className="h-10"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">Flow (ml/s)</Label>
+              <Input
+                inputMode="decimal"
+                placeholder="optional"
+                value={flow}
+                onChange={(e) => setFlow(e.target.value)}
+                onBlur={() => onUpdate(step.id, { flow_rate_ml_s: numParse(flow) })}
+                className="h-10"
+              />
+            </div>
           </div>
         )}
-        <Textarea
-          placeholder={
-            mode === "brewed_coffee"
-              ? "Technique / description"
-              : "Ingredient or step (e.g. 18g espresso, then steam 120g milk)"
-          }
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          onBlur={() => onUpdate(step.id, { description: desc.trim() || null })}
-          className="min-h-10"
-        />
+        <div className="flex flex-col gap-1">
+          <Label className="text-xs text-muted-foreground">
+            {brewed ? "Technique / description" : "Ingredient or step"}
+          </Label>
+          <Textarea
+            placeholder={
+              brewed
+                ? "e.g. center pour, slow"
+                : "e.g. 18 g espresso, then 120 g steamed milk"
+            }
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            onBlur={() => onUpdate(step.id, { description: desc.trim() || null })}
+            className="min-h-10"
+          />
+        </div>
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-8 shrink-0 text-destructive"
-        onClick={() => onDelete(step.id)}
-        aria-label="Delete"
-      >
+      <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 text-destructive" onClick={() => onDelete(step.id)} aria-label="Delete">
         <Trash2 className="size-4" />
       </Button>
     </li>

@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { BrewMethod, EquipmentOption, Recipe } from "@/lib/db-types";
-import { RecipeEditor } from "./recipe-editor";
+import type { BrewMethod, Recipe } from "@/lib/db-types";
+import { RecipeDetail } from "./recipe-detail";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +12,17 @@ type RecipeWithNames = Recipe & {
   countries: Named;
   processes: Named;
 };
+type EquipRow = { id: string; name: string | null; equipment_categories: { name: string } | null };
 
-export default async function RecipeDetail({
+export default async function RecipePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ new?: string }>;
 }) {
   const { id } = await params;
+  const { new: isNewParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,14 +42,19 @@ export default async function RecipeDetail({
     .select("id, name, slug, behavior_family, default_water_anchor")
     .order("name");
 
-  const { data: equipment } = await supabase
+  const { data: equipData } = await supabase
     .from("equipment")
-    .select("id, name")
+    .select("id, name, equipment_categories(name)")
     .eq("is_workflow_relevant", true)
     .order("name");
+  const equipment = ((equipData ?? []) as unknown as EquipRow[]).map((e) => ({
+    id: e.id,
+    name: e.name,
+    category: e.equipment_categories?.name ?? null,
+  }));
 
   return (
-    <RecipeEditor
+    <RecipeDetail
       recipe={recipe}
       names={{
         coffee: recipe.coffees?.name ?? null,
@@ -54,7 +63,8 @@ export default async function RecipeDetail({
         process: recipe.processes?.name ?? null,
       }}
       brewMethods={(brewMethods ?? []) as BrewMethod[]}
-      equipment={(equipment ?? []) as EquipmentOption[]}
+      equipment={equipment}
+      isNew={isNewParam === "1"}
     />
   );
 }

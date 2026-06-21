@@ -39,7 +39,7 @@ export interface Equipment {
   category_id: string | null;
   is_workflow_relevant: boolean;
   manufacturer: string | null;
-  type: string | null;
+  sub_category: string | null;
   brew_method_family: BrewMethodFamily | null;
   price: number | null;
   acquired_on: string | null;
@@ -58,11 +58,14 @@ export interface Coffee {
   region_id: string | null;
   producer_id: string | null;
   roast_level_id: string | null;
-  roaster_notes: string | null;
+  flavor_notes: string | null;
   recommended_rest: string | null;
   website_url: string | null;
   image_path: string | null;
   notes: string | null;
+  elevation: string | null;
+  salinity: string | null;
+  humidity: string | null;
   rating_override: number | null;
   created_at: string;
   updated_at: string;
