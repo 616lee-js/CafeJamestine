@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { deleteRecipe } from "../actions";
 import { StepsEditor } from "@/components/steps-editor";
+import { IngredientsEditor } from "@/components/ingredients-editor";
 
 const NONE = "__none__";
 type EquipOpt = { id: string; name: string | null; category: string | null };
@@ -192,10 +193,13 @@ export function RecipeDetail({
             {brewed && <ViewRow label="Bloom/Preinfusion (g)" value={row.bloom_grams ?? undefined} />}
             {brewed && <ViewRow label="Bloom/Preinfusion (s)" value={row.bloom_seconds ?? undefined} />}
             {brewed && row.is_iced && <ViewRow label="Ice (g)" value={row.ice_grams ?? "iced"} />}
-            {row.is_standard && <ViewRow label="For roaster" value={names.roaster} />}
-            {row.is_standard && <ViewRow label="For country" value={names.country} />}
-            {row.is_standard && <ViewRow label="For process" value={names.process} />}
+            {brewed && row.is_standard && <ViewRow label="For roaster" value={names.roaster} />}
+            {brewed && row.is_standard && <ViewRow label="For country" value={names.country} />}
+            {brewed && row.is_standard && <ViewRow label="For process" value={names.process} />}
           </div>
+          {!brewed && (
+            <IngredientsEditor parentField="recipe_id" parentId={row.id} readOnly />
+          )}
           <StepsEditor parentField="recipe_id" parentId={row.id} mode={row.recipe_type} readOnly />
           <ViewRow label="Notes" value={row.notes} />
         </div>
@@ -221,7 +225,7 @@ export function RecipeDetail({
                 set(v ? { is_standard: true, coffee_id: null } : { is_standard: false })
               }
             />
-            {!draft.is_standard && (
+            {brewed && !draft.is_standard && (
               <Field label="Coffee" hint="Makes this a coffee-specific recipe">
                 <CoffeeSelect
                   value={draft.coffee_id}
@@ -287,8 +291,8 @@ export function RecipeDetail({
             </section>
           )}
 
-          {/* Generalist associations — standards only */}
-          {draft.is_standard && (
+          {/* Generalist associations — brewed standards only */}
+          {brewed && draft.is_standard && (
             <section className="grid gap-5 sm:grid-cols-3">
               <Field label="For roaster">
                 <ReferenceSelect table="roasters" value={draft.roaster_id} valueName={draftNames.roaster}
@@ -305,6 +309,9 @@ export function RecipeDetail({
             </section>
           )}
 
+          {!brewed && (
+            <IngredientsEditor parentField="recipe_id" parentId={row.id} />
+          )}
           <StepsEditor parentField="recipe_id" parentId={row.id} mode={row.recipe_type} />
 
           <TextareaField label="Notes" defaultValue={draft.notes} onCommit={(v) => set({ notes: v })} />

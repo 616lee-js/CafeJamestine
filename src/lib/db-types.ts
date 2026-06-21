@@ -13,7 +13,8 @@ export type ReferenceTable =
   | "regions"
   | "producers"
   | "processes"
-  | "varietals";
+  | "varietals"
+  | "units";
 
 export interface ReferenceRow {
   id: string;
@@ -177,4 +178,17 @@ export interface RecipeStep {
 export interface EquipmentOption {
   id: string;
   name: string | null;
+}
+
+export interface RecipeIngredient {
+  id: string;
+  user_id: string;
+  recipe_id: string | null;
+  session_id: string | null;
+  name: string | null;
+  quantity: number | null;
+  unit_id: string | null;
+  position: number | null;
+  created_at: string;
+  updated_at: string;
 }

@@ -19,6 +19,7 @@ export default function ReferencePage() {
         <ReferenceManager table="producers" label="Producers" />
         <ReferenceManager table="processes" label="Processes" />
         <ReferenceManager table="varietals" label="Varietals" />
+        <ReferenceManager table="units" label="Units (ingredients)" />
       </div>
     </div>
   );

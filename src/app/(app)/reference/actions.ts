@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ReferenceTable } from "@/lib/db-types";
 
 const TABLES: ReferenceTable[] = [
-  "roasters", "countries", "regions", "producers", "processes", "varietals",
+  "roasters", "countries", "regions", "producers", "processes", "varietals", "units",
 ];
 
 type Result = { data?: { id: string; name: string }; error?: string };

@@ -94,28 +94,39 @@ export function StepsEditor({
   if (readOnly) {
     return (
       <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold">
-          {brewed ? "Steps" : "Ingredients & steps"}
-        </h2>
+        <h2 className="text-lg font-semibold">{brewed ? "Steps" : "Steps"}</h2>
         {steps.length === 0 ? (
           <p className="text-sm text-muted-foreground">None.</p>
+        ) : brewed ? (
+          // Brewed-coffee steps render as a structured table.
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-3 py-2 font-medium">Time</th>
+                  <th className="px-3 py-2 font-medium">Description</th>
+                  <th className="px-3 py-2 font-medium">Total weight</th>
+                  <th className="px-3 py-2 font-medium">Flow rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {steps.map((s) => (
+                  <tr key={s.id} className="border-b border-border last:border-0">
+                    <td className="px-3 py-2 tabular-nums">{secondsToMMSS(s.timestamp_seconds) || "—"}</td>
+                    <td className="px-3 py-2">{s.description || "—"}</td>
+                    <td className="px-3 py-2 tabular-nums">{s.target_weight_grams != null ? `${s.target_weight_grams} g` : "—"}</td>
+                    <td className="px-3 py-2 tabular-nums">{s.flow_rate_ml_s != null ? `${s.flow_rate_ml_s} ml/s` : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
+          // Specialty prose steps render as an ordered list.
           <ol className="flex flex-col gap-2">
             {steps.map((s, i) => (
               <li key={s.id} className="rounded-lg border border-border px-3 py-2 text-sm">
                 <span className="mr-2 font-medium text-muted-foreground">{i + 1}.</span>
-                {brewed && (
-                  <span className="text-muted-foreground">
-                    {[
-                      s.timestamp_seconds != null && `@ ${secondsToMMSS(s.timestamp_seconds)}`,
-                      s.target_weight_grams != null && `to ${s.target_weight_grams} g`,
-                      s.flow_rate_ml_s != null && `${s.flow_rate_ml_s} ml/s`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                    {s.description ? " — " : ""}
-                  </span>
-                )}
                 {s.description}
               </li>
             ))}

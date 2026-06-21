@@ -14,6 +14,7 @@ const INSTANCE_COLS = [
 const STEP_COLS = [
   "position", "timestamp_seconds", "target_weight_grams", "flow_rate_ml_s", "description",
 ] as const;
+const INGREDIENT_COLS = ["name", "quantity", "unit_id", "position"] as const;
 
 export async function createSession({
   recipeType,
@@ -83,6 +84,22 @@ export async function createSession({
         return r;
       });
       await supabase.from("recipe_steps").insert(rows);
+    }
+
+    // Specialty drinks carry an ingredients list too (brewed sources have none → no-op).
+    const { data: ingData } = await supabase
+      .from("recipe_ingredients")
+      .select(INGREDIENT_COLS.join(", "))
+      .eq(parentField, sourceId)
+      .order("position", { ascending: true });
+    const ings = (ingData ?? []) as unknown as Array<Record<string, unknown>>;
+    if (ings.length) {
+      const rows = ings.map((s) => {
+        const r: Record<string, unknown> = { session_id: created.id };
+        for (const c of INGREDIENT_COLS) r[c] = s[c];
+        return r;
+      });
+      await supabase.from("recipe_ingredients").insert(rows);
     }
   }
 

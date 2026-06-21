@@ -8,6 +8,7 @@ import { GRINDER_CATEGORIES, BREWER_CATEGORIES } from "@/lib/equipment";
 import { useAutosave } from "@/lib/use-autosave";
 import { Field, TextField, NumberField, SwitchField } from "@/components/fields";
 import { StepsEditor } from "@/components/steps-editor";
+import { IngredientsEditor } from "@/components/ingredients-editor";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -126,6 +127,9 @@ export function SessionDetail({
         </section>
       )}
 
+      {!brewed && (
+        <IngredientsEditor parentField="session_id" parentId={session.id} />
+      )}
       <StepsEditor parentField="session_id" parentId={session.id} mode={session.recipe_type} />
 
       <div className="flex items-center gap-3 border-t border-border pt-6">

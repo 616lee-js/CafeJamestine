@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Session } from "@/lib/db-types";
 import { StepsEditor } from "@/components/steps-editor";
+import { IngredientsEditor } from "@/components/ingredients-editor";
 import { CompleteButton } from "./complete-button";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +55,10 @@ export default async function BrewPage({
         {session.recipes?.name && coffeeName && (
           <p className="mt-1 text-muted-foreground">{session.recipes.name}</p>
         )}
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col gap-8">
+          {session.recipe_type === "specialty_drink" && (
+            <IngredientsEditor parentField="session_id" parentId={id} readOnly />
+          )}
           <StepsEditor parentField="session_id" parentId={id} mode={session.recipe_type} readOnly />
         </div>
       </main>
