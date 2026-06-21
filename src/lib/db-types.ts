@@ -129,6 +129,36 @@ export interface Recipe {
   updated_at: string;
 }
 
+export type SessionStatus = "active" | "complete";
+
+export interface Session {
+  id: string;
+  user_id: string;
+  coffee_bag_id: string | null;
+  recipe_breadcrumb_id: string | null;
+  recipe_type: RecipeType; // write-once
+  status: SessionStatus;
+  brewed_at: string | null;
+  days_rested_snapshot: number | null;
+  brew_method_id: string | null;
+  brewer_device_id: string | null;
+  grinder_id: string | null;
+  grind_setting: string | null;
+  dose_grams: number | null;
+  water_grams: number | null;
+  water_anchor: WaterAnchor | null;
+  water_temp_celsius: number | null;
+  bloom_grams: number | null;
+  bloom_seconds: number | null;
+  is_iced: boolean;
+  ice_grams: number | null;
+  post_brew_total_time: number | null;
+  post_brew_notes: string | null;
+  next_time_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface RecipeStep {
   id: string;
   user_id: string;

@@ -17,12 +17,15 @@ const num = (s: string): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-export function RecipeStepsEditor({
-  recipeId,
+// Ordered steps belonging to EITHER a recipe or a session (exactly one parent).
+export function StepsEditor({
+  parentField,
+  parentId,
   mode,
   readOnly = false,
 }: {
-  recipeId: string;
+  parentField: "recipe_id" | "session_id";
+  parentId: string;
   mode: RecipeType;
   readOnly?: boolean;
 }) {
@@ -33,7 +36,7 @@ export function RecipeStepsEditor({
     const { data } = await supabase
       .from("recipe_steps")
       .select("*")
-      .eq("recipe_id", recipeId)
+      .eq(parentField, parentId)
       .order("position", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true });
     setSteps((data ?? []) as RecipeStep[]);
@@ -43,14 +46,14 @@ export function RecipeStepsEditor({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipeId]);
+  }, [parentField, parentId]);
 
   async function addStep() {
     const supabase = createClient();
     const nextPos = steps.reduce((m, s) => Math.max(m, s.position ?? 0), 0) + 1;
     const { error } = await supabase
       .from("recipe_steps")
-      .insert({ recipe_id: recipeId, position: nextPos });
+      .insert({ [parentField]: parentId, position: nextPos });
     if (error) return toast.error(error.message);
     load();
   }
@@ -207,36 +210,15 @@ function StepRow({
           <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Time (from start)</Label>
-              <Input
-                inputMode="numeric"
-                placeholder="M:SS e.g. 1:45"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                onBlur={commitTime}
-                className="h-10"
-              />
+              <Input inputMode="numeric" placeholder="M:SS e.g. 1:45" value={time} onChange={(e) => setTime(e.target.value)} onBlur={commitTime} className="h-10" />
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">To weight (g)</Label>
-              <Input
-                inputMode="decimal"
-                placeholder="e.g. 50"
-                value={tw}
-                onChange={(e) => setTw(e.target.value)}
-                onBlur={() => onUpdate(step.id, { target_weight_grams: numParse(tw) })}
-                className="h-10"
-              />
+              <Input inputMode="decimal" placeholder="e.g. 50" value={tw} onChange={(e) => setTw(e.target.value)} onBlur={() => onUpdate(step.id, { target_weight_grams: numParse(tw) })} className="h-10" />
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Flow (ml/s)</Label>
-              <Input
-                inputMode="decimal"
-                placeholder="optional"
-                value={flow}
-                onChange={(e) => setFlow(e.target.value)}
-                onBlur={() => onUpdate(step.id, { flow_rate_ml_s: numParse(flow) })}
-                className="h-10"
-              />
+              <Input inputMode="decimal" placeholder="optional" value={flow} onChange={(e) => setFlow(e.target.value)} onBlur={() => onUpdate(step.id, { flow_rate_ml_s: numParse(flow) })} className="h-10" />
             </div>
           </div>
         )}
@@ -245,11 +227,7 @@ function StepRow({
             {brewed ? "Technique / description" : "Ingredient or step"}
           </Label>
           <Textarea
-            placeholder={
-              brewed
-                ? "e.g. center pour, slow"
-                : "e.g. 18 g espresso, then 120 g steamed milk"
-            }
+            placeholder={brewed ? "e.g. center pour, slow" : "e.g. 18 g espresso, then 120 g steamed milk"}
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             onBlur={() => onUpdate(step.id, { description: desc.trim() || null })}

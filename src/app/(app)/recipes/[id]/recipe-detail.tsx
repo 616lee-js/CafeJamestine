@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { deleteRecipe } from "../actions";
-import { RecipeStepsEditor } from "./recipe-steps-editor";
+import { StepsEditor } from "@/components/steps-editor";
 
 const NONE = "__none__";
 type EquipOpt = { id: string; name: string | null; category: string | null };
@@ -196,7 +196,7 @@ export function RecipeDetail({
             {row.is_standard && <ViewRow label="For country" value={names.country} />}
             {row.is_standard && <ViewRow label="For process" value={names.process} />}
           </div>
-          <RecipeStepsEditor recipeId={row.id} mode={row.recipe_type} readOnly />
+          <StepsEditor parentField="recipe_id" parentId={row.id} mode={row.recipe_type} readOnly />
           <ViewRow label="Notes" value={row.notes} />
         </div>
       ) : (
@@ -305,7 +305,7 @@ export function RecipeDetail({
             </section>
           )}
 
-          <RecipeStepsEditor recipeId={row.id} mode={row.recipe_type} />
+          <StepsEditor parentField="recipe_id" parentId={row.id} mode={row.recipe_type} />
 
           <TextareaField label="Notes" defaultValue={draft.notes} onCommit={(v) => set({ notes: v })} />
         </div>
