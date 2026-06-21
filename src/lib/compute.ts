@@ -3,6 +3,34 @@ import type { BagStatus, CoffeeBag, CoffeeBagStatusEvent } from "./db-types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Ratings round to nearest 0.5 (global precision rule).
+export function roundHalf(n: number): number {
+  return Math.round(n * 2) / 2;
+}
+
+// A session's overall: manual override wins; else avg of filled 1–5 ratings × 2, round 0.5.
+export function sessionOverall(
+  ratings: (number | null | undefined)[],
+  override: number | null | undefined,
+): number | null {
+  if (override != null) return override;
+  const filled = ratings.filter((r): r is number => r != null);
+  if (filled.length === 0) return null;
+  const avg = filled.reduce((a, b) => a + b, 0) / filled.length;
+  return roundHalf(avg * 2);
+}
+
+// A coffee's aggregate rating: manual override wins; else avg of its sessions' overalls, round 0.5.
+export function coffeeRating(
+  sessionOveralls: (number | null | undefined)[],
+  override: number | null | undefined,
+): number | null {
+  if (override != null) return override;
+  const filled = sessionOveralls.filter((r): r is number => r != null);
+  if (filled.length === 0) return null;
+  return roundHalf(filled.reduce((a, b) => a + b, 0) / filled.length);
+}
+
 // Coffee-level status from its bags: most-active wins.
 const STATUS_PRECEDENCE: BagStatus[] = ["active", "resting", "frozen", "finished"];
 

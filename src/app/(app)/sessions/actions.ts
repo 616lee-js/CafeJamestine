@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { RecipeType } from "@/lib/db-types";
+import type { CoffeeBagStatusEvent, RecipeType } from "@/lib/db-types";
+import { daysRested } from "@/lib/compute";
 
 // Embedded recipe-instance columns copied onto a session from a recipe/session source.
 const INSTANCE_COLS = [
@@ -103,7 +104,53 @@ export async function createSession({
     }
   }
 
-  redirect(`/sessions/${created.id}`);
+  redirect(`/sessions/${created.id}?new=1`);
+}
+
+// The single freeze point: snapshot days-rested + brewed_at and mark complete.
+// Triggers (migration 0015) make the session immutable once status='complete'.
+export async function completeSession(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("coffee_bag_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  let snapshot: number | null = null;
+  if (session?.coffee_bag_id) {
+    const { data: bag } = await supabase
+      .from("coffee_bags")
+      .select("roast_date")
+      .eq("id", session.coffee_bag_id)
+      .maybeSingle();
+    const { data: events } = await supabase
+      .from("coffee_bag_status_events")
+      .select("status, changed_at")
+      .eq("coffee_bag_id", session.coffee_bag_id);
+    snapshot = daysRested(
+      bag?.roast_date ?? null,
+      (events ?? []) as Pick<CoffeeBagStatusEvent, "status" | "changed_at">[],
+    );
+  }
+
+  const { error } = await supabase
+    .from("sessions")
+    .update({
+      status: "complete",
+      brewed_at: new Date().toISOString(),
+      days_rested_snapshot: snapshot,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/sessions/${id}`);
+  redirect(`/sessions/${id}`);
 }
 
 export async function deleteSession(id: string) {

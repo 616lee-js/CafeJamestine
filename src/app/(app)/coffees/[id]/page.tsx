@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Coffee, SeedRow } from "@/lib/db-types";
+import { coffeeRating, sessionOverall } from "@/lib/compute";
 import { CoffeeDetail } from "./coffee-detail";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +52,24 @@ export default async function CoffeePage({
     imageUrl = signed?.signedUrl ?? null;
   }
 
+  // Computed aggregate rating: avg of completed sessions' overalls (manual override wins).
+  const { data: sessRows } = await supabase
+    .from("sessions")
+    .select("id, coffee_bags!inner(coffee_id), tastings(overall_override, tasting_entries(rating))")
+    .eq("status", "complete")
+    .eq("coffee_bags.coffee_id", id);
+  const overalls = ((sessRows ?? []) as unknown as Array<{
+    tastings: { overall_override: number | null; tasting_entries: { rating: number | null }[] }[] | null;
+  }>).map((s) => {
+    const t = s.tastings?.[0];
+    return sessionOverall(
+      (t?.tasting_entries ?? []).map((e) => e.rating),
+      t?.overall_override ?? null,
+    );
+  });
+  const ratingCount = overalls.filter((o) => o != null).length;
+  const rating = coffeeRating(overalls, coffee.rating_override);
+
   return (
     <CoffeeDetail
       coffee={coffee}
@@ -64,6 +83,8 @@ export default async function CoffeePage({
       userId={user.id}
       imageUrl={imageUrl}
       isNew={isNewParam === "1"}
+      rating={rating}
+      ratingCount={ratingCount}
     />
   );
 }

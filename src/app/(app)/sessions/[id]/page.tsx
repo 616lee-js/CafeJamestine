@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { BrewMethod, Session } from "@/lib/db-types";
+import type { BrewMethod, Session, TastingCategory } from "@/lib/db-types";
 import { SessionDetail } from "./session-detail";
 
 export const dynamic = "force-dynamic";
@@ -10,10 +10,13 @@ type EquipRow = { id: string; name: string | null; equipment_categories: { name:
 
 export default async function SessionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ new?: string }>;
 }) {
   const { id } = await params;
+  const { new: isNewParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,6 +47,11 @@ export default async function SessionPage({
     category: e.equipment_categories?.name ?? null,
   }));
 
+  const { data: categories } = await supabase
+    .from("tasting_categories")
+    .select("id, slug, display, guidance, sort_order")
+    .order("sort_order");
+
   return (
     <SessionDetail
       session={session}
@@ -51,6 +59,8 @@ export default async function SessionPage({
       roastDate={session.coffee_bags?.roast_date ?? null}
       brewMethods={(brewMethods ?? []) as BrewMethod[]}
       equipment={equipment}
+      categories={(categories ?? []) as TastingCategory[]}
+      isNew={isNewParam === "1"}
     />
   );
 }

@@ -180,6 +180,34 @@ export interface EquipmentOption {
   name: string | null;
 }
 
+export interface TastingCategory {
+  id: string;
+  slug: string;
+  display: string;
+  guidance: string;
+  sort_order: number | null;
+}
+
+export interface Tasting {
+  id: string;
+  user_id: string;
+  session_id: string | null;
+  overall_override: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TastingEntry {
+  id: string;
+  user_id: string;
+  tasting_id: string;
+  category_id: string;
+  rating: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface RecipeIngredient {
   id: string;
   user_id: string;

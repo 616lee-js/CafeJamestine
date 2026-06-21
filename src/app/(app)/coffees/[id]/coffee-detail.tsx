@@ -43,6 +43,8 @@ export function CoffeeDetail({
   userId,
   imageUrl,
   isNew,
+  rating,
+  ratingCount,
 }: {
   coffee: Coffee;
   names: Names;
@@ -50,6 +52,8 @@ export function CoffeeDetail({
   userId: string;
   imageUrl: string | null;
   isNew: boolean;
+  rating: number | null;
+  ratingCount: number;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"view" | "edit">(isNew ? "edit" : "view");
@@ -169,8 +173,14 @@ export function CoffeeDetail({
             <ViewRow label="Roast level" value={roastName(row.roast_level_id)} />
             <ViewRow label="Recommended rest" value={row.recommended_rest} />
             <ViewRow
-              label="Rating (manual)"
-              value={row.rating_override ?? undefined}
+              label="Rating"
+              value={
+                rating == null
+                  ? undefined
+                  : row.rating_override != null
+                    ? `${rating} (manual)`
+                    : `${rating} · ${ratingCount} session${ratingCount === 1 ? "" : "s"}`
+              }
             />
             <ViewRow
               label="Website"
