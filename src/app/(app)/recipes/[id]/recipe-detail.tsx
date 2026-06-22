@@ -12,10 +12,12 @@ import {
   Field,
   TextField,
   NumberField,
+  MmssField,
   TextareaField,
   SwitchField,
   ViewRow,
 } from "@/components/fields";
+import { secondsToMMSS } from "@/lib/format";
 import { ReferenceSelect } from "@/components/reference-select";
 import { CoffeeSelect } from "@/components/coffee-select";
 import { Button } from "@/components/ui/button";
@@ -190,15 +192,15 @@ export function RecipeDetail({
             {brewed && <ViewRow label="Water (g)" value={row.water_grams ?? undefined} />}
             {brewed && <ViewRow label="Measured by" value={row.water_anchor} />}
             {brewed && <ViewRow label="Temperature (°C)" value={row.water_temp_celsius ?? undefined} />}
-            {brewed && <ViewRow label="Bloom/Preinfusion (g)" value={row.bloom_grams ?? undefined} />}
-            {brewed && <ViewRow label="Bloom/Preinfusion (s)" value={row.bloom_seconds ?? undefined} />}
+            {brewed && <ViewRow label={`${bloomLabel} water (g)`} value={row.bloom_grams ?? undefined} />}
+            {brewed && <ViewRow label={`${bloomLabel} time (m:ss)`} value={row.bloom_seconds != null ? secondsToMMSS(row.bloom_seconds) : undefined} />}
             {brewed && row.is_iced && <ViewRow label="Ice (g)" value={row.ice_grams ?? "iced"} />}
             {brewed && row.is_standard && <ViewRow label="For roaster" value={names.roaster} />}
             {brewed && row.is_standard && <ViewRow label="For country" value={names.country} />}
             {brewed && row.is_standard && <ViewRow label="For process" value={names.process} />}
           </div>
           {!brewed && (
-            <IngredientsEditor parentField="recipe_id" parentId={row.id} readOnly />
+            <IngredientsEditor parentField="recipe_id" parentId={row.id} readOnly showMultiplier />
           )}
           <StepsEditor parentField="recipe_id" parentId={row.id} mode={row.recipe_type} readOnly />
           <ViewRow label="Notes" value={row.notes} />
@@ -279,8 +281,8 @@ export function RecipeDetail({
               <NumberField label="Dose (g)" defaultValue={draft.dose_grams} onCommit={(v) => set({ dose_grams: v })} />
               <NumberField label="Water (g)" defaultValue={draft.water_grams} onCommit={(v) => set({ water_grams: v })} />
               <NumberField label="Temperature (°C)" defaultValue={draft.water_temp_celsius} onCommit={(v) => set({ water_temp_celsius: v })} />
-              <NumberField label={`${bloomLabel} (g)`} defaultValue={draft.bloom_grams} onCommit={(v) => set({ bloom_grams: v })} />
-              <NumberField label={`${bloomLabel} (s)`} defaultValue={draft.bloom_seconds} onCommit={(v) => set({ bloom_seconds: v })} />
+              <NumberField label={`${bloomLabel} water (g)`} defaultValue={draft.bloom_grams} onCommit={(v) => set({ bloom_grams: v })} />
+              <MmssField label={`${bloomLabel} time (m:ss)`} defaultSeconds={draft.bloom_seconds} onCommit={(v) => set({ bloom_seconds: v })} />
 
               <div className="sm:col-span-2">
                 <SwitchField label="Iced" defaultChecked={draft.is_iced} onCommit={(v) => set({ is_iced: v })} />

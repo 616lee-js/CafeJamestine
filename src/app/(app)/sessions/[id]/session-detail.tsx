@@ -2,14 +2,24 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Lock, Pencil, Play, Trash2 } from "lucide-react";
-import type { BrewMethod, Session, TastingCategory, WaterAnchor } from "@/lib/db-types";
+import { ArrowLeft, Check, Copy, Pencil, Play, Trash2 } from "lucide-react";
+import type {
+  BrewMethod,
+  CoffeeBagStatusEvent,
+  Session,
+  TastingCategory,
+  WaterAnchor,
+} from "@/lib/db-types";
 import { GRINDER_CATEGORIES, BREWER_CATEGORIES } from "@/lib/equipment";
+import { daysRested } from "@/lib/compute";
+import { secondsToMMSS } from "@/lib/format";
 import { useAutosave } from "@/lib/use-autosave";
 import {
   Field,
   TextField,
   NumberField,
+  MmssField,
+  DateField,
   SwitchField,
   TextareaField,
   ViewRow,
@@ -26,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { deleteSession, completeSession } from "../actions";
+import { deleteSession, completeSession, cloneSession } from "../actions";
 
 const NONE = "__none__";
 type EquipOpt = { id: string; name: string | null; category: string | null };
@@ -35,6 +45,7 @@ export function SessionDetail({
   session,
   coffeeName,
   roastDate,
+  bagEvents,
   brewMethods,
   equipment,
   categories,
@@ -43,6 +54,7 @@ export function SessionDetail({
   session: Session;
   coffeeName: string | null;
   roastDate: string | null;
+  bagEvents: Pick<CoffeeBagStatusEvent, "status" | "changed_at">[];
   brewMethods: BrewMethod[];
   equipment: EquipOpt[];
   categories: TastingCategory[];
@@ -50,9 +62,11 @@ export function SessionDetail({
 }) {
   const save = useAutosave("sessions", session.id);
   const brewed = session.recipe_type === "brewed_coffee";
-  const frozen = session.status === "complete";
+  const complete = session.status === "complete";
 
-  const [editing, setEditing] = useState(isNew && !frozen);
+  const [reopened, setReopened] = useState(false);
+  const canEdit = !complete || reopened; // Option B: completed sessions editable via reopen
+  const [editingInstance, setEditingInstance] = useState(isNew && canEdit);
   const [methodId, setMethodId] = useState(session.brew_method_id);
   const [anchor, setAnchor] = useState<WaterAnchor | null>(session.water_anchor);
   const [iced, setIced] = useState(session.is_iced);
@@ -64,6 +78,10 @@ export function SessionDetail({
   const equipName = (id: string | null) => equipment.find((e) => e.id === id)?.name ?? null;
   const family = brewMethods.find((m) => m.id === methodId)?.behavior_family;
   const bloomLabel = family === "espresso" ? "Preinfusion" : family === "filter" ? "Bloom" : "Bloom / Preinfusion";
+
+  const restedNow = complete
+    ? session.days_rested_snapshot
+    : daysRested(roastDate, bagEvents);
 
   function pickMethod(v: string) {
     const id = v === NONE ? null : v;
@@ -85,15 +103,30 @@ export function SessionDetail({
         </Link>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{brewed ? "Brewed coffee" : "Specialty drink"}</Badge>
-          <Badge variant={frozen ? "secondary" : "default"}>{session.status}</Badge>
-          {!frozen && (
-            <form action={deleteSession.bind(null, session.id)}>
-              <Button type="submit" variant="ghost" size="sm" className="text-destructive">
-                <Trash2 className="size-4" />
-                Discard
+          <Badge variant={complete ? "secondary" : "default"}>{session.status}</Badge>
+          {complete &&
+            (reopened ? (
+              <Button size="sm" variant="ghost" onClick={() => { setReopened(false); setEditingInstance(false); }}>
+                Done
               </Button>
-            </form>
-          )}
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setReopened(true)}>
+                <Pencil className="size-4" />
+                Edit session
+              </Button>
+            ))}
+          <form action={cloneSession.bind(null, session.id)}>
+            <Button type="submit" variant="ghost" size="sm">
+              <Copy className="size-4" />
+              Clone
+            </Button>
+          </form>
+          <form action={deleteSession.bind(null, session.id)}>
+            <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+              <Trash2 className="size-4" />
+              Delete
+            </Button>
+          </form>
         </div>
       </div>
 
@@ -102,11 +135,13 @@ export function SessionDetail({
           {brewed ? coffeeName || "Coffee" : "Specialty drink"}
         </h1>
         {brewed && roastDate && <p className="text-sm text-muted-foreground">roasted {roastDate}</p>}
-        {frozen && (
-          <p className="mt-2 flex items-center gap-1.5 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-            <Lock className="size-4" />
-            Completed{session.brewed_at ? ` ${new Date(session.brewed_at).toLocaleString()}` : ""} — frozen and read-only.
-            {session.days_rested_snapshot != null && ` Rested ${session.days_rested_snapshot}d at brew.`}
+        {restedNow != null && (
+          <p className="text-sm text-muted-foreground">Total days rested: {restedNow}</p>
+        )}
+        {complete && session.brewed_at && (
+          <p className="text-sm text-muted-foreground">
+            Completed {new Date(session.brewed_at).toLocaleDateString()}
+            {!reopened && " · editable via Edit session"}
           </p>
         )}
       </div>
@@ -115,20 +150,18 @@ export function SessionDetail({
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Recipe</h2>
-          {!frozen &&
-            (editing ? (
-              <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-                Done editing
-              </Button>
+          {canEdit &&
+            (editingInstance ? (
+              <Button size="sm" variant="outline" onClick={() => setEditingInstance(false)}>Done editing</Button>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              <Button size="sm" variant="outline" onClick={() => setEditingInstance(true)}>
                 <Pencil className="size-4" />
                 Edit
               </Button>
             ))}
         </div>
 
-        {editing && !frozen ? (
+        {canEdit && editingInstance ? (
           <div className="flex flex-col gap-5">
             {brewed ? (
               <div className="grid gap-5 sm:grid-cols-2">
@@ -157,8 +190,8 @@ export function SessionDetail({
                 <NumberField label="Dose (g)" defaultValue={session.dose_grams} onCommit={(v) => save({ dose_grams: v })} />
                 <NumberField label="Water (g)" defaultValue={session.water_grams} onCommit={(v) => save({ water_grams: v })} />
                 <NumberField label="Temperature (°C)" defaultValue={session.water_temp_celsius} onCommit={(v) => save({ water_temp_celsius: v })} />
-                <NumberField label={`${bloomLabel} (g)`} defaultValue={session.bloom_grams} onCommit={(v) => save({ bloom_grams: v })} />
-                <NumberField label={`${bloomLabel} (s)`} defaultValue={session.bloom_seconds} onCommit={(v) => save({ bloom_seconds: v })} />
+                <NumberField label={`${bloomLabel} water (g)`} defaultValue={session.bloom_grams} onCommit={(v) => save({ bloom_grams: v })} />
+                <MmssField label={`${bloomLabel} time (m:ss)`} defaultSeconds={session.bloom_seconds} onCommit={(v) => save({ bloom_seconds: v })} />
                 <div className="sm:col-span-2">
                   <SwitchField label="Iced" defaultChecked={iced} onCommit={(v) => { setIced(v); save({ is_iced: v }); }} />
                 </div>
@@ -181,8 +214,8 @@ export function SessionDetail({
                 <ViewRow label="Water (g)" value={session.water_grams ?? undefined} />
                 <ViewRow label="Measured by" value={session.water_anchor} />
                 <ViewRow label="Temperature (°C)" value={session.water_temp_celsius ?? undefined} />
-                <ViewRow label="Bloom/Preinfusion (g)" value={session.bloom_grams ?? undefined} />
-                <ViewRow label="Bloom/Preinfusion (s)" value={session.bloom_seconds ?? undefined} />
+                <ViewRow label="Bloom water (g)" value={session.bloom_grams ?? undefined} />
+                <ViewRow label="Bloom time (m:ss)" value={session.bloom_seconds != null ? secondsToMMSS(session.bloom_seconds) : undefined} />
                 {session.is_iced && <ViewRow label="Ice (g)" value={session.ice_grams ?? "iced"} />}
               </div>
             )}
@@ -191,7 +224,7 @@ export function SessionDetail({
           </div>
         )}
 
-        {!frozen && !editing && (
+        {!complete && !editingInstance && (
           <div>
             <Button asChild size="lg">
               <Link href={`/brew/${session.id}`}>
@@ -203,47 +236,63 @@ export function SessionDetail({
         )}
       </section>
 
+      {/* ---- Completion details (editable when reopened) ---- */}
+      {complete && reopened && (
+        <section className="grid gap-5 border-t border-border pt-6 sm:grid-cols-2">
+          <DateField
+            label="Brewed date"
+            defaultValue={session.brewed_at ? session.brewed_at.slice(0, 10) : null}
+            onCommit={(v) => save({ brewed_at: v ? new Date(`${v}T00:00:00`).toISOString() : null })}
+          />
+          <NumberField
+            label="Total days rested"
+            defaultValue={session.days_rested_snapshot}
+            onCommit={(v) => save({ days_rested_snapshot: v == null ? null : Math.round(v) })}
+          />
+        </section>
+      )}
+
       {/* ---- Feedback ---- */}
       <section className="flex flex-col gap-5 border-t border-border pt-6">
         <h2 className="text-lg font-semibold">Post-brew notes</h2>
-        {frozen ? (
-          <div className="grid gap-x-8 sm:grid-cols-2">
-            <ViewRow label="Total brew time (s)" value={session.post_brew_total_time ?? undefined} />
-            <ViewRow label="Post-brew notes" value={session.post_brew_notes} />
-          </div>
-        ) : (
+        {canEdit ? (
           <div className="grid gap-5 sm:grid-cols-2">
-            <NumberField label="Total brew time (s)" defaultValue={session.post_brew_total_time} onCommit={(v) => save({ post_brew_total_time: v })} />
+            <MmssField label="Total brew time (m:ss)" defaultSeconds={session.post_brew_total_time} onCommit={(v) => save({ post_brew_total_time: v })} />
             <div className="sm:col-span-2">
               <TextareaField label="Post-brew notes" defaultValue={session.post_brew_notes} onCommit={(v) => save({ post_brew_notes: v })} />
             </div>
           </div>
+        ) : (
+          <div className="grid gap-x-8 sm:grid-cols-2">
+            <ViewRow label="Total brew time" value={session.post_brew_total_time != null ? secondsToMMSS(session.post_brew_total_time) : undefined} />
+            <ViewRow label="Post-brew notes" value={session.post_brew_notes} />
+          </div>
         )}
 
-        <TastingEditor sessionId={session.id} categories={categories} readOnly={frozen} />
+        <TastingEditor sessionId={session.id} categories={categories} readOnly={!canEdit} />
 
-        {frozen ? (
-          <ViewRow label="Next-time adjustments" value={session.next_time_notes} />
-        ) : (
+        {canEdit ? (
           <TextareaField label="Next-time adjustments" defaultValue={session.next_time_notes} onCommit={(v) => save({ next_time_notes: v })} />
+        ) : (
+          <ViewRow label="Next-time adjustments" value={session.next_time_notes} />
         )}
       </section>
 
-      {/* ---- Freeze ---- */}
-      {!frozen && (
+      {/* ---- Mark complete (active only) ---- */}
+      {!complete && (
         <section className="border-t border-border pt-6">
           {confirming ? (
             <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
               <p className="text-sm">
-                Mark complete? This <strong>freezes the session permanently</strong> — the
-                recipe, steps, and tasting become read-only.
+                Mark complete? This snapshots days-rested + brew date and marks the workflow
+                done. You can still edit it afterward.
               </p>
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button>
                 <form action={completeSession.bind(null, session.id)}>
                   <Button type="submit">
                     <Check className="size-4" />
-                    Confirm freeze
+                    Mark complete
                   </Button>
                 </form>
               </div>
@@ -251,7 +300,7 @@ export function SessionDetail({
           ) : (
             <Button size="lg" onClick={() => setConfirming(true)}>
               <Check className="size-4" />
-              Mark complete &amp; freeze
+              Mark complete
             </Button>
           )}
         </section>

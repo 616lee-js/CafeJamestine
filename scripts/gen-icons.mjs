@@ -76,4 +76,6 @@ mkdirSync("public", { recursive: true });
 writeFileSync("public/icon-192.png", makePng(192, { maskable: false }));
 writeFileSync("public/icon-512.png", makePng(512, { maskable: false }));
 writeFileSync("public/icon-512-maskable.png", makePng(512, { maskable: true }));
-console.log("Wrote public/icon-192.png, icon-512.png, icon-512-maskable.png");
+// iOS home-screen icon: 180×180, solid (non-transparent) so standalone launch looks right.
+writeFileSync("public/apple-touch-icon.png", makePng(180, { maskable: false }));
+console.log("Wrote public/icon-192.png, icon-512.png, icon-512-maskable.png, apple-touch-icon.png");

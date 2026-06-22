@@ -4,9 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { TastingCategory } from "@/lib/db-types";
-import { sessionOverall } from "@/lib/compute";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { RatingField } from "@/components/fields";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
@@ -22,7 +20,7 @@ export function TastingEditor({
   readOnly?: boolean;
 }) {
   const [tastingId, setTastingId] = useState<string | null>(null);
-  const [override, setOverride] = useState<number | null>(null);
+  const [overall, setOverall] = useState<number | null>(null);
   const [entries, setEntries] = useState<Record<string, EntryState>>({});
   const tastingPromise = useRef<Promise<string> | null>(null);
 
@@ -31,7 +29,7 @@ export function TastingEditor({
     (async () => {
       const { data: t } = await supabase
         .from("tastings")
-        .select("id, overall_override")
+        .select("id, overall_rating")
         .eq("session_id", sessionId)
         .maybeSingle();
       if (!t) return;
@@ -44,7 +42,7 @@ export function TastingEditor({
         map[e.category_id] = { id: e.id, rating: e.rating, notes: e.notes ?? "" };
       }
       setTastingId(t.id);
-      setOverride((t as { overall_override: number | null }).overall_override);
+      setOverall((t as { overall_rating: number | null }).overall_rating);
       setEntries(map);
     })();
   }, [sessionId]);
@@ -94,35 +92,43 @@ export function TastingEditor({
     }
   }
 
-  async function saveOverride(v: number | null) {
-    setOverride(v);
+  async function saveOverall(v: number | null) {
+    setOverall(v);
     try {
       const tid = await ensureTasting();
       const supabase = createClient();
-      await supabase.from("tastings").update({ overall_override: v }).eq("id", tid);
+      await supabase.from("tastings").update({ overall_rating: v }).eq("id", tid);
     } catch (e) {
       toast.error(`Save failed: ${(e as Error).message}`);
     }
   }
 
-  const ratings = categories.map((c) => entries[c.id]?.rating ?? null);
-  const computed = sessionOverall(ratings, null);
-  const effective = override ?? computed;
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Tasting</h2>
-        <div className="text-right text-sm">
-          <div>
-            <span className="text-muted-foreground">Overall </span>
-            <span className="font-semibold">{effective ?? "—"}</span>
-            {override != null && (
-              <span className="text-muted-foreground"> (manual · computed {computed ?? "—"})</span>
-            )}
-          </div>
-        </div>
+        {readOnly && (
+          <span className="text-sm">
+            <span className="text-muted-foreground">Overall enjoyment </span>
+            <span className="font-semibold">{overall ?? "—"}</span>
+            <span className="text-muted-foreground">/10</span>
+          </span>
+        )}
       </div>
+
+      {!readOnly && (
+        <RatingField
+          label="Overall enjoyment (1–10)"
+          defaultValue={overall}
+          hint="Standalone enjoyment, set directly (1–10, 0.5 steps)"
+          onCommit={saveOverall}
+        />
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Per-category 1–5 describes prominence/intensity on each parameter&apos;s spectrum (not
+        enjoyment).
+      </p>
 
       <div className="flex flex-col gap-3">
         {categories.map((c) => {
@@ -147,23 +153,6 @@ export function TastingEditor({
           );
         })}
       </div>
-
-      {!readOnly && (
-        <div className="flex items-center gap-2">
-          <Label className="text-sm">Override overall (1–10)</Label>
-          <Input
-            inputMode="decimal"
-            defaultValue={override ?? ""}
-            placeholder="optional"
-            onBlur={(ev) => {
-              const v = ev.target.value.trim();
-              const n = v === "" ? null : Number(v);
-              saveOverride(n != null && Number.isFinite(n) ? n : null);
-            }}
-            className="h-10 w-24"
-          />
-        </div>
-      )}
 
       <details className="text-xs text-muted-foreground">
         <summary className="cursor-pointer">SCA flavor wheel (reference)</summary>

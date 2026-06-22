@@ -10,7 +10,7 @@ import type { Coffee, SeedRow } from "@/lib/db-types";
 import {
   Field,
   TextField,
-  NumberField,
+  RatingField,
   TextareaField,
   ViewRow,
 } from "@/components/fields";
@@ -344,7 +344,7 @@ export function CoffeeDetail({
             placeholder="https://…"
             onCommit={(v) => set({ website_url: v })}
           />
-          <NumberField
+          <RatingField
             label="Rating override (1–10)"
             defaultValue={draft.rating_override}
             hint="Optional; overrides computed aggregate"

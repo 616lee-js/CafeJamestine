@@ -192,7 +192,7 @@ export interface Tasting {
   id: string;
   user_id: string;
   session_id: string | null;
-  overall_override: number | null;
+  overall_rating: number | null;
   created_at: string;
   updated_at: string;
 }

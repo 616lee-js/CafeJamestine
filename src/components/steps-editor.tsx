@@ -193,16 +193,13 @@ function StepRow({
   const [flow, setFlow] = useState(step.flow_rate_ml_s?.toString() ?? "");
   const [desc, setDesc] = useState(step.description ?? "");
 
-  function commitTime() {
-    if (time.trim() === "") return onUpdate(step.id, { timestamp_seconds: null });
-    const sec = mmssToSeconds(time);
-    if (sec == null) {
-      toast.error("Use M:SS, e.g. 1:45");
-      setTime(secondsToMMSS(step.timestamp_seconds));
-      return;
-    }
-    setTime(secondsToMMSS(sec));
-    onUpdate(step.id, { timestamp_seconds: sec });
+  // Masked m:ss — digits format from the right (345 → 3:45), iPad keypad friendly.
+  function maskTime(raw: string) {
+    const d = raw.replace(/\D/g, "").slice(0, 4);
+    if (d === "") return setTime("");
+    const s = d.slice(-2).padStart(2, "0");
+    const m = d.slice(0, -2);
+    setTime(`${m === "" ? "0" : String(parseInt(m, 10))}:${s}`);
   }
 
   return (
@@ -221,7 +218,7 @@ function StepRow({
           <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Time (from start)</Label>
-              <Input inputMode="numeric" placeholder="M:SS e.g. 1:45" value={time} onChange={(e) => setTime(e.target.value)} onBlur={commitTime} className="h-10" />
+              <Input inputMode="numeric" placeholder="m:ss" value={time} onChange={(e) => maskTime(e.target.value)} onBlur={() => onUpdate(step.id, { timestamp_seconds: time.trim() === "" ? null : mmssToSeconds(time) })} className="h-10" />
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">To weight (g)</Label>

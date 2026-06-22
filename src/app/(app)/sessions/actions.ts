@@ -153,6 +153,69 @@ export async function completeSession(id: string) {
   redirect(`/sessions/${id}`);
 }
 
+// Clone-to-correct: copy a session (instance + steps + ingredients) into a new active session.
+export async function cloneSession(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: src } = await supabase
+    .from("sessions")
+    .select(
+      [...INSTANCE_COLS, "recipe_type", "coffee_bag_id", "recipe_breadcrumb_id"].join(", "),
+    )
+    .eq("id", id)
+    .single();
+  const s = src as unknown as Record<string, unknown>;
+
+  const base: Record<string, unknown> = {
+    recipe_type: s.recipe_type,
+    status: "active",
+    coffee_bag_id: s.coffee_bag_id ?? null,
+    recipe_breadcrumb_id: s.recipe_breadcrumb_id ?? null,
+  };
+  for (const c of INSTANCE_COLS) base[c] = s[c];
+
+  const { data: created, error } = await supabase
+    .from("sessions")
+    .insert(base)
+    .select("id")
+    .single();
+  if (error || !created) throw new Error(error?.message ?? "clone failed");
+
+  const { data: steps } = await supabase
+    .from("recipe_steps")
+    .select(STEP_COLS.join(", "))
+    .eq("session_id", id);
+  const sRows = (steps ?? []) as unknown as Array<Record<string, unknown>>;
+  if (sRows.length) {
+    await supabase.from("recipe_steps").insert(
+      sRows.map((r) => {
+        const o: Record<string, unknown> = { session_id: created.id };
+        for (const c of STEP_COLS) o[c] = r[c];
+        return o;
+      }),
+    );
+  }
+  const { data: ings } = await supabase
+    .from("recipe_ingredients")
+    .select(INGREDIENT_COLS.join(", "))
+    .eq("session_id", id);
+  const iRows = (ings ?? []) as unknown as Array<Record<string, unknown>>;
+  if (iRows.length) {
+    await supabase.from("recipe_ingredients").insert(
+      iRows.map((r) => {
+        const o: Record<string, unknown> = { session_id: created.id };
+        for (const c of INGREDIENT_COLS) o[c] = r[c];
+        return o;
+      }),
+    );
+  }
+  redirect(`/sessions/${created.id}?new=1`);
+}
+
 export async function deleteSession(id: string) {
   const supabase = await createClient();
   const {

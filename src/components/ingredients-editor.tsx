@@ -18,10 +18,12 @@ export function IngredientsEditor({
   parentField,
   parentId,
   readOnly = false,
+  showMultiplier = false,
 }: {
   parentField: "recipe_id" | "session_id";
   parentId: string;
   readOnly?: boolean;
+  showMultiplier?: boolean;
 }) {
   const [items, setItems] = useState<Item[]>([]);
   const [mult, setMult] = useState(1);
@@ -95,7 +97,7 @@ export function IngredientsEditor({
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Ingredients</h2>
-          {items.length > 0 && (
+          {showMultiplier && items.length > 0 && (
             <div className="flex items-center gap-1">
               <span className="mr-1 text-xs text-muted-foreground">Batch</span>
               {MULTIPLIERS.map((m) => (

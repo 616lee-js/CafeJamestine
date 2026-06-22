@@ -7,10 +7,13 @@ export const dynamic = "force-dynamic";
 
 export default async function EquipmentDetail({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ new?: string }>;
 }) {
   const { id } = await params;
+  const { new: isNewParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -43,6 +46,7 @@ export default async function EquipmentDetail({
       categories={(categories ?? []) as SeedRow[]}
       userId={user.id}
       imageUrl={imageUrl}
+      isNew={isNewParam === "1"}
     />
   );
 }

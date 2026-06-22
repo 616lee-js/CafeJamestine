@@ -1,6 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { BrewMethod, Session, TastingCategory } from "@/lib/db-types";
+import type {
+  BrewMethod,
+  CoffeeBagStatusEvent,
+  Session,
+  TastingCategory,
+} from "@/lib/db-types";
 import { SessionDetail } from "./session-detail";
 
 export const dynamic = "force-dynamic";
@@ -52,11 +57,21 @@ export default async function SessionPage({
     .select("id, slug, display, guidance, sort_order")
     .order("sort_order");
 
+  let bagEvents: Pick<CoffeeBagStatusEvent, "status" | "changed_at">[] = [];
+  if (session.coffee_bag_id) {
+    const { data: evs } = await supabase
+      .from("coffee_bag_status_events")
+      .select("status, changed_at")
+      .eq("coffee_bag_id", session.coffee_bag_id);
+    bagEvents = (evs ?? []) as Pick<CoffeeBagStatusEvent, "status" | "changed_at">[];
+  }
+
   return (
     <SessionDetail
       session={session}
       coffeeName={session.coffee_bags?.coffees?.name ?? null}
       roastDate={session.coffee_bags?.roast_date ?? null}
+      bagEvents={bagEvents}
       brewMethods={(brewMethods ?? []) as BrewMethod[]}
       equipment={equipment}
       categories={(categories ?? []) as TastingCategory[]}

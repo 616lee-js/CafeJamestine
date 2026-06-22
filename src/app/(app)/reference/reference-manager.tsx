@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { ReferenceTable } from "@/lib/db-types";
@@ -42,17 +42,16 @@ export function ReferenceManager({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table]);
 
-  async function rename(id: string, name: string, original: string) {
+  async function rename(id: string, name: string) {
     const trimmed = name.trim();
-    if (trimmed === "" || trimmed === original) return;
+    if (trimmed === "") return;
     const supabase = createClient();
     const { error } = await supabase.from(table).update({ name: trimmed }).eq("id", id);
     if (error) {
-      toast.error(
-        error.code === "23505" ? "A row with that name already exists." : error.message,
-      );
-      load();
+      toast.error(error.code === "23505" ? "That name already exists." : error.message);
+      return;
     }
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, name: trimmed } : r)));
   }
 
   async function remove(id: string) {
@@ -61,7 +60,7 @@ export function ReferenceManager({
     if (error) {
       toast.error(
         error.code === "23503"
-          ? "In use by a coffee/recipe — can't delete. Remove references first."
+          ? "In use — can't delete. Remove references first."
           : `Delete failed: ${error.message}`,
       );
       return;
@@ -77,31 +76,65 @@ export function ReferenceManager({
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">None yet.</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-1.5">
           {rows.map((r) => (
-            <li key={r.id} className="flex items-center gap-2">
-              <Input
-                defaultValue={r.name}
-                onBlur={(e) => rename(r.id, e.target.value, r.name)}
-                className="h-10"
-              />
-              {r.country && (
-                <span className="shrink-0 text-xs text-muted-foreground">{r.country}</span>
-              )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-9 shrink-0 text-destructive"
-                onClick={() => remove(r.id)}
-                aria-label={`Delete ${r.name}`}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </li>
+            <RefRow key={r.id} row={r} onRename={rename} onDelete={remove} />
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+function RefRow({
+  row,
+  onRename,
+  onDelete,
+}: {
+  row: Row;
+  onRename: (id: string, name: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(row.name);
+
+  if (editing) {
+    return (
+      <li className="flex items-center gap-2">
+        <Input value={value} onChange={(e) => setValue(e.target.value)} className="h-10" autoFocus />
+        <Button
+          size="sm"
+          onClick={() => {
+            onRename(row.id, value);
+            setEditing(false);
+          }}
+        >
+          Save
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setValue(row.name);
+            setEditing(false);
+          }}
+        >
+          Cancel
+        </Button>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+      <span className="flex-1 text-sm">{row.name}</span>
+      {row.country && <span className="text-xs text-muted-foreground">{row.country}</span>}
+      <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setEditing(true)} aria-label={`Edit ${row.name}`}>
+        <Pencil className="size-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => onDelete(row.id)} aria-label={`Delete ${row.name}`}>
+        <Trash2 className="size-4" />
+      </Button>
+    </li>
   );
 }

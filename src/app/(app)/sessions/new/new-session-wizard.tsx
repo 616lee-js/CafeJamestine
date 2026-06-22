@@ -11,7 +11,9 @@ import { createSession } from "../actions";
 
 type ActiveCoffee = { coffeeId: string; name: string; activeBagId: string };
 type RecipeOpt = { id: string; name: string | null; is_standard: boolean; coffee: string | null };
-type SessionOpt = { id: string; date: string | null };
+type SessionOpt = { id: string; label: string };
+
+const fmtDate = (d: string | null) => (d ? new Date(d).toLocaleDateString() : "draft");
 
 export function NewSessionWizard() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -68,23 +70,32 @@ export function NewSessionWizard() {
       recipeType === "brewed_coffee" && coffee
         ? supabase
             .from("sessions")
-            .select("id, created_at, brewed_at, coffee_bags!inner(coffee_id)")
+            .select("id, created_at, brewed_at, coffee_bags!inner(coffee_id, coffees(name)), brew_methods(name)")
             .eq("recipe_type", "brewed_coffee")
             .eq("coffee_bags.coffee_id", coffee.coffeeId)
             .order("created_at", { ascending: false })
         : supabase
             .from("sessions")
-            .select("id, created_at, brewed_at")
+            .select("id, created_at, brewed_at, recipes(name)")
             .eq("recipe_type", recipeType)
             .order("created_at", { ascending: false })
             .limit(20);
     sessionsQuery.then(({ data }) => {
       const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
       setSessions(
-        rows.map((r) => ({
-          id: String(r.id),
-          date: (r.brewed_at as string | null) ?? (r.created_at as string | null) ?? null,
-        })),
+        rows.map((r) => {
+          const date = (r.brewed_at as string | null) ?? (r.created_at as string | null) ?? null;
+          if (recipeType === "brewed_coffee") {
+            const cn =
+              (r.coffee_bags as { coffees: { name: string | null } | null } | null)?.coffees?.name ??
+              coffee?.name ??
+              "";
+            const mn = (r.brew_methods as { name: string } | null)?.name ?? "";
+            return { id: String(r.id), label: [fmtDate(date), cn, mn].filter(Boolean).join(" · ") };
+          }
+          const rn = (r.recipes as { name: string | null } | null)?.name ?? "";
+          return { id: String(r.id), label: [fmtDate(date), rn].filter(Boolean).join(" · ") };
+        }),
       );
     });
   }, [step, recipeType, coffee]);
@@ -209,7 +220,7 @@ export function NewSessionWizard() {
                   <li key={s.id}>
                     <button type="button" disabled={busy} onClick={() => start("session", s.id)}
                       className="w-full rounded-lg border border-border px-4 py-3 text-left hover:bg-accent disabled:opacity-50">
-                      Session — {s.date ? new Date(s.date).toLocaleDateString() : "draft"}
+                      {s.label}
                     </button>
                   </li>
                 ))}

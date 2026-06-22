@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { secondsToMMSS, mmssToSeconds, roundMoney } from "@/lib/format";
 
 // Labeled, self-contained auto-save fields. Text commits on blur; toggles/dates on change.
 // onCommit receives the normalized value (null when empty).
@@ -99,9 +100,120 @@ export function NumberField({
         onBlur={() => {
           if (v.trim() === "") return onCommit(null);
           const n = Number(v);
-          onCommit(Number.isFinite(n) ? n : null);
+          // Measurements: max 1 decimal.
+          onCommit(Number.isFinite(n) ? Math.round(n * 10) / 10 : null);
         }}
         className="h-11"
+      />
+    </Field>
+  );
+}
+
+// Money: "$" prefix, exactly 2 decimals on commit (exempt from the 1-decimal rule).
+export function MoneyField({
+  label,
+  defaultValue,
+  onCommit,
+  hint,
+}: {
+  label: string;
+  defaultValue: number | null;
+  onCommit: (v: number | null) => void;
+  hint?: string;
+}) {
+  const [v, setV] = useState(defaultValue == null ? "" : String(defaultValue));
+  return (
+    <Field label={label} hint={hint}>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+          $
+        </span>
+        <Input
+          inputMode="decimal"
+          value={v}
+          placeholder="0.00"
+          onChange={(e) => setV(e.target.value)}
+          onBlur={() => {
+            if (v.trim() === "") return onCommit(null);
+            const n = Number(v);
+            onCommit(Number.isFinite(n) ? roundMoney(n) : null);
+          }}
+          className="h-11 pl-7"
+        />
+      </div>
+    </Field>
+  );
+}
+
+// Rating: 1–10 in 0.5 steps (coffee override + overall enjoyment).
+export function RatingField({
+  label,
+  defaultValue,
+  onCommit,
+  hint,
+}: {
+  label: string;
+  defaultValue: number | null;
+  onCommit: (v: number | null) => void;
+  hint?: string;
+}) {
+  const [v, setV] = useState(defaultValue == null ? "" : String(defaultValue));
+  return (
+    <Field label={label} hint={hint ?? "1–10, 0.5 steps"}>
+      <Input
+        inputMode="decimal"
+        value={v}
+        placeholder="e.g. 8.5"
+        onChange={(e) => setV(e.target.value)}
+        onBlur={() => {
+          if (v.trim() === "") {
+            setV("");
+            return onCommit(null);
+          }
+          const n = Number(v);
+          if (!Number.isFinite(n)) {
+            setV("");
+            return onCommit(null);
+          }
+          const clamped = Math.min(10, Math.max(1, Math.round(n * 2) / 2));
+          setV(String(clamped));
+          onCommit(clamped);
+        }}
+        className="h-11 w-28"
+      />
+    </Field>
+  );
+}
+
+// Time as M:SS via a masked numeric input (iPad keypad friendly — no typed colon).
+// Stores/commits seconds; digits format from the right (345 → 3:45).
+export function MmssField({
+  label,
+  defaultSeconds,
+  onCommit,
+  hint,
+}: {
+  label: string;
+  defaultSeconds: number | null;
+  onCommit: (seconds: number | null) => void;
+  hint?: string;
+}) {
+  const [display, setDisplay] = useState(secondsToMMSS(defaultSeconds));
+  return (
+    <Field label={label} hint={hint ?? "m:ss"}>
+      <Input
+        inputMode="numeric"
+        value={display}
+        placeholder="0:00"
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+          if (digits === "") return setDisplay("");
+          const secs = digits.slice(-2).padStart(2, "0");
+          const mins = digits.slice(0, -2);
+          setDisplay(`${mins === "" ? "0" : String(parseInt(mins, 10))}:${secs}`);
+        }}
+        onBlur={() => onCommit(display.trim() === "" ? null : mmssToSeconds(display))}
+        className="h-11 w-28"
       />
     </Field>
   );

@@ -57,7 +57,7 @@ export default async function BrewPage({
         )}
         <div className="mt-8 flex flex-col gap-8">
           {session.recipe_type === "specialty_drink" && (
-            <IngredientsEditor parentField="session_id" parentId={id} readOnly />
+            <IngredientsEditor parentField="session_id" parentId={id} readOnly showMultiplier />
           )}
           <StepsEditor parentField="session_id" parentId={id} mode={session.recipe_type} readOnly />
         </div>

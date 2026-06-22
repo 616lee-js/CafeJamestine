@@ -16,7 +16,8 @@ import {
   daysRested,
   priceRange,
 } from "@/lib/compute";
-import { DateField, NumberField, TextareaField, ViewRow } from "@/components/fields";
+import { DateField, MoneyField, TextareaField, ViewRow } from "@/components/fields";
+import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,6 +42,7 @@ const latestStatus = (events: CoffeeBagStatusEvent[]): BagStatus | null => {
 export function BagsSection({ coffeeId }: { coffeeId: string }) {
   const [bags, setBags] = useState<CoffeeBag[]>([]);
   const [events, setEvents] = useState<Record<string, CoffeeBagStatusEvent[]>>({});
+  const [newBagId, setNewBagId] = useState<string | null>(null);
 
   async function load() {
     const supabase = createClient();
@@ -84,12 +86,36 @@ export function BagsSection({ coffeeId }: { coffeeId: string }) {
 
   async function addBag() {
     const supabase = createClient();
-    // No auto status event — the user sets the initial status + effective date in the log.
-    const { error } = await supabase
+    // New bag opens directly in edit; the user sets status + effective date in the log.
+    const { data, error } = await supabase
       .from("coffee_bags")
-      .insert({ coffee_id: coffeeId, status: "resting" });
-    if (error) return toast.error(error.message);
+      .insert({ coffee_id: coffeeId, status: "resting" })
+      .select("id")
+      .single();
+    if (error || !data) return toast.error(error?.message ?? "Add failed");
+    setNewBagId(data.id);
     load();
+  }
+
+  // Auto-resting: a roast date implies resting begins then. Create the first resting event at
+  // the roast date if none, else move the earliest resting event to match.
+  async function ensureRestingAtRoast(bagId: string, roastDate: string | null) {
+    if (!roastDate) return;
+    const iso = new Date(`${roastDate}T00:00:00`).toISOString();
+    const supabase = createClient();
+    const resting = (events[bagId] ?? [])
+      .filter((e) => e.status === "resting")
+      .sort((a, b) => new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime());
+    if (resting.length === 0) {
+      await supabase
+        .from("coffee_bag_status_events")
+        .insert({ coffee_bag_id: bagId, status: "resting", changed_at: iso });
+    } else if (resting[0].changed_at !== iso) {
+      await supabase
+        .from("coffee_bag_status_events")
+        .update({ changed_at: iso })
+        .eq("id", resting[0].id);
+    }
   }
 
   async function saveBag(id: string, patch: Partial<CoffeeBag>) {
@@ -97,6 +123,10 @@ export function BagsSection({ coffeeId }: { coffeeId: string }) {
     const { error } = await supabase.from("coffee_bags").update(patch).eq("id", id);
     if (error) return toast.error(`Save failed: ${error.message}`);
     setBags((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+    if ("roast_date" in patch) {
+      await ensureRestingAtRoast(id, patch.roast_date ?? null);
+      load();
+    }
   }
 
   async function deleteBag(id: string) {
@@ -171,8 +201,8 @@ export function BagsSection({ coffeeId }: { coffeeId: string }) {
           Price:{" "}
           {range
             ? range.min === range.max
-              ? range.min
-              : `${range.min}–${range.max}`
+              ? formatMoney(range.min)
+              : `${formatMoney(range.min)}–${formatMoney(range.max)}`
             : "—"}
         </span>
       </div>
@@ -186,6 +216,7 @@ export function BagsSection({ coffeeId }: { coffeeId: string }) {
               key={bag.id}
               bag={bag}
               events={events[bag.id] ?? []}
+              initialEditing={bag.id === newBagId}
               onSave={saveBag}
               onDelete={deleteBag}
               onAddEvent={addEvent}
@@ -202,6 +233,7 @@ export function BagsSection({ coffeeId }: { coffeeId: string }) {
 function BagCard({
   bag,
   events,
+  initialEditing = false,
   onSave,
   onDelete,
   onAddEvent,
@@ -210,14 +242,15 @@ function BagCard({
 }: {
   bag: CoffeeBag;
   events: CoffeeBagStatusEvent[];
+  initialEditing?: boolean;
   onSave: (id: string, patch: Partial<CoffeeBag>) => void;
   onDelete: (id: string) => void;
   onAddEvent: (bagId: string, status: BagStatus, iso: string) => void;
   onUpdateEvent: (bagId: string, eventId: string, patch: Partial<CoffeeBagStatusEvent>) => void;
   onDeleteEvent: (bagId: string, eventId: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(initialEditing);
+  const [editing, setEditing] = useState(initialEditing);
   const [draft, setDraft] = useState<Partial<CoffeeBag>>(bag);
 
   // add-status controls
@@ -269,7 +302,8 @@ function BagCard({
             <div className="flex flex-col gap-2">
               <div className="grid gap-x-8 sm:grid-cols-2">
                 <ViewRow label="Roast date" value={bag.roast_date} />
-                <ViewRow label="Price" value={bag.price ?? undefined} />
+                <ViewRow label="Price" value={bag.price != null ? formatMoney(bag.price) : undefined} />
+                <ViewRow label="Total days rested" value={rested ?? undefined} />
               </div>
               <ViewRow label="Notes" value={bag.notes} />
               <div className="flex gap-2">
@@ -296,7 +330,7 @@ function BagCard({
                   defaultValue={draft.roast_date ?? null}
                   onCommit={(v) => setDraft((d) => ({ ...d, roast_date: v }))}
                 />
-                <NumberField
+                <MoneyField
                   label="Price"
                   defaultValue={draft.price ?? null}
                   onCommit={(v) => setDraft((d) => ({ ...d, price: v }))}
