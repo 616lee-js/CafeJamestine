@@ -18,6 +18,7 @@ import {
 } from "@/lib/compute";
 import { DateField, MoneyField, TextareaField, ViewRow } from "@/components/fields";
 import { formatMoney } from "@/lib/format";
+import { ActionButton } from "@/components/action-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -311,15 +312,16 @@ function BagCard({
                   <Pencil className="size-4" />
                   Edit
                 </Button>
-                <Button
+                <ActionButton
                   size="sm"
                   variant="ghost"
                   className="text-destructive"
-                  onClick={() => onDelete(bag.id)}
+                  confirm={{ title: "Delete this bag?", confirmLabel: "Delete" }}
+                  onAction={() => onDelete(bag.id)}
                 >
                   <Trash2 className="size-4" />
                   Delete bag
-                </Button>
+                </ActionButton>
               </div>
             </div>
           ) : (

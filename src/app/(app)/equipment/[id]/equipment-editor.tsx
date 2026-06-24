@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { deleteEquipment } from "../actions";
+import { ActionButton } from "@/components/action-button";
 
 const NONE = "__none__";
 const FAMILIES = ["filter", "espresso", "hybrid"];
@@ -106,12 +107,16 @@ export function EquipmentEditor({
               <Pencil className="size-4" />
               Edit
             </Button>
-            <form action={deleteEquipment.bind(null, row.id)}>
-              <Button type="submit" variant="ghost" size="sm" className="text-destructive">
-                <Trash2 className="size-4" />
-                Delete
-              </Button>
-            </form>
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              className="text-destructive"
+              confirm={{ title: `Delete equipment “${row.name || "Untitled"}”?`, confirmLabel: "Delete" }}
+              onAction={() => deleteEquipment(row.id)}
+            >
+              <Trash2 className="size-4" />
+              Delete
+            </ActionButton>
           </div>
         ) : (
           <div className="flex items-center gap-2">

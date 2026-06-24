@@ -27,6 +27,7 @@ import {
 import { StepsEditor } from "@/components/steps-editor";
 import { IngredientsEditor } from "@/components/ingredients-editor";
 import { TastingEditor } from "@/components/tasting-editor";
+import { ActionButton } from "@/components/action-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -115,18 +116,20 @@ export function SessionDetail({
                 Edit session
               </Button>
             ))}
-          <form action={cloneSession.bind(null, session.id)}>
-            <Button type="submit" variant="ghost" size="sm">
-              <Copy className="size-4" />
-              Clone
-            </Button>
-          </form>
-          <form action={deleteSession.bind(null, session.id)}>
-            <Button type="submit" variant="ghost" size="sm" className="text-destructive">
-              <Trash2 className="size-4" />
-              Delete
-            </Button>
-          </form>
+          <ActionButton variant="ghost" size="sm" onAction={() => cloneSession(session.id)}>
+            <Copy className="size-4" />
+            Clone
+          </ActionButton>
+          <ActionButton
+            variant="ghost"
+            size="sm"
+            className="text-destructive"
+            confirm={{ title: "Delete this session?", confirmLabel: "Delete" }}
+            onAction={() => deleteSession(session.id)}
+          >
+            <Trash2 className="size-4" />
+            Delete
+          </ActionButton>
         </div>
       </div>
 

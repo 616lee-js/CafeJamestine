@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { RecipeType } from "@/lib/db-types";
 import { Button } from "@/components/ui/button";
+import { isRedirectError } from "@/components/action-button";
 import { createSession } from "../actions";
 
 type ActiveCoffee = { coffeeId: string; name: string; activeBagId: string };
@@ -116,6 +117,7 @@ export function NewSessionWizard() {
         sourceId: sourceId ?? null,
       });
     } catch (e) {
+      if (isRedirectError(e)) return; // createSession redirected — navigation, not an error
       setBusy(false);
       toast.error((e as Error).message);
     }

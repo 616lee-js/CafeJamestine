@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { deleteRecipe } from "../actions";
+import { ActionButton } from "@/components/action-button";
 import { StepsEditor } from "@/components/steps-editor";
 import { IngredientsEditor } from "@/components/ingredients-editor";
 
@@ -152,12 +153,16 @@ export function RecipeDetail({
                 <Pencil className="size-4" />
                 Edit
               </Button>
-              <form action={deleteRecipe.bind(null, row.id)}>
-                <Button type="submit" variant="ghost" size="sm" className="text-destructive">
-                  <Trash2 className="size-4" />
-                  Delete
-                </Button>
-              </form>
+              <ActionButton
+                variant="ghost"
+                size="sm"
+                className="text-destructive"
+                confirm={{ title: `Delete recipe “${row.name || "Untitled recipe"}”?`, confirmLabel: "Delete" }}
+                onAction={() => deleteRecipe(row.id)}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </ActionButton>
             </>
           ) : (
             <>
