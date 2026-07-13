@@ -1,0 +1,28 @@
+name: keep-alive
+
+# Pings Supabase ~3x/week (Sun/Wed/Fri 09:00 UTC) to generate real DB write activity so the
+# free-tier project is never auto-paused (pause triggers after 7 days idle; max gap here = 3 days).
+# A failed run turns red and GitHub emails the repo owner — the "fails loudly" requirement.
+on:
+  schedule:
+    - cron: "0 9 * * 0,3,5"
+  workflow_dispatch: {}
+
+# Never run more than one at a time; a new run supersedes an in-flight one.
+concurrency:
+  group: keep-alive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Ping Supabase
+        run: node scripts/keep-alive.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
