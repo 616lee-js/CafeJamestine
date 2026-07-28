@@ -28,7 +28,7 @@ export default async function AppLayout({
     <div className="flex min-h-full flex-1 flex-col">
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-4xl items-center gap-4 px-4">
-          <Link href="/coffees" className="font-semibold tracking-tight">
+          <Link href="/" className="font-semibold tracking-tight">
             Café Jamestine
           </Link>
           <nav className="flex items-center gap-1">

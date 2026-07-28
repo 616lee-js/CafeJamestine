@@ -13,15 +13,21 @@ export const dynamic = "force-dynamic";
 type Bag = { roast_date: string | null; coffees: { name: string | null } | null } | null;
 type EquipRow = { id: string; name: string | null; equipment_categories: { name: string } | null };
 
+type Phase = "confirm" | "postbrew" | "make" | "tasting";
+const PHASES: Phase[] = ["confirm", "postbrew", "make", "tasting"];
+
 export default async function SessionPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ new?: string }>;
+  searchParams: Promise<{ phase?: string; from?: string }>;
 }) {
   const { id } = await params;
-  const { new: isNewParam } = await searchParams;
+  const { phase: phaseParam, from } = await searchParams;
+  const initialPhase: Phase = PHASES.includes(phaseParam as Phase) ? (phaseParam as Phase) : "confirm";
+  // Context-aware back: honor an internal entry path, else default to the Sessions list.
+  const backHref = from && from.startsWith("/") ? from : "/sessions";
   const supabase = await createClient();
   const {
     data: { user },
@@ -75,7 +81,8 @@ export default async function SessionPage({
       brewMethods={(brewMethods ?? []) as BrewMethod[]}
       equipment={equipment}
       categories={(categories ?? []) as TastingCategory[]}
-      isNew={isNewParam === "1"}
+      initialPhase={initialPhase}
+      backHref={backHref}
     />
   );
 }

@@ -32,6 +32,27 @@ export function coffeeStatus(bags: Pick<CoffeeBag, "status">[]): BagStatus | nul
   return null;
 }
 
+// Coffees-list grouping (design spec §7), derived from bag status — no stored coffee status.
+// active: ≥1 active bag · history: has bags, all finished · storage: else (frozen/resting; frozen
+// folds in here). null = no bags (that coffee is Incomplete, surfaced via the filter below).
+export function coffeeGroup(
+  bags: Pick<CoffeeBag, "status">[],
+): "active" | "storage" | "history" | null {
+  if (bags.length === 0) return null;
+  if (bags.some((b) => b.status === "active")) return "active";
+  if (bags.every((b) => b.status === "finished")) return "history";
+  return "storage";
+}
+
+// Incomplete = not really in use yet: no bags at all, or nothing roasted/dated (e.g. ordered,
+// not yet received). A separate FILTER, not a group — kept out of the in-use groupings.
+export function isIncomplete(
+  bags: Pick<CoffeeBag, "status" | "roast_date">[],
+): boolean {
+  if (bags.length === 0) return true;
+  return bags.every((b) => !b.roast_date);
+}
+
 export function bagCountsByStatus(
   bags: Pick<CoffeeBag, "status">[],
 ): Record<BagStatus, number> {

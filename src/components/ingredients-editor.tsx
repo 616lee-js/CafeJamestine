@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type Item = RecipeIngredient & { unitName: string | null };
-const MULTIPLIERS = [1, 2, 3, 4];
+const round1 = (n: number) => Math.round(n * 10) / 10;
 const scale = (q: number, m: number) => Math.round(q * m * 10) / 10;
 
 export function IngredientsEditor({
@@ -26,7 +26,10 @@ export function IngredientsEditor({
   showMultiplier?: boolean;
 }) {
   const [items, setItems] = useState<Item[]>([]);
-  const [mult, setMult] = useState(1);
+  // Optional decimal batch multiplier (up to 1 dp), display-only — never alters the recipe.
+  const [multStr, setMultStr] = useState("1");
+  const parsedMult = Number(multStr);
+  const mult = Number.isFinite(parsedMult) && parsedMult > 0 ? round1(parsedMult) : 1;
 
   async function load() {
     const supabase = createClient();
@@ -98,13 +101,15 @@ export function IngredientsEditor({
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Ingredients</h2>
           {showMultiplier && items.length > 0 && (
-            <div className="flex items-center gap-1">
-              <span className="mr-1 text-xs text-muted-foreground">Batch</span>
-              {MULTIPLIERS.map((m) => (
-                <Button key={m} size="sm" variant={mult === m ? "default" : "outline"} className="h-7 px-2" onClick={() => setMult(m)}>
-                  {m}×
-                </Button>
-              ))}
+            <div className="flex items-center gap-2">
+              <Label htmlFor="batch-mult" className="text-xs text-muted-foreground">Batch ×</Label>
+              <Input
+                id="batch-mult"
+                inputMode="decimal"
+                value={multStr}
+                onChange={(e) => setMultStr(e.target.value)}
+                className="h-8 w-20"
+              />
             </div>
           )}
         </div>

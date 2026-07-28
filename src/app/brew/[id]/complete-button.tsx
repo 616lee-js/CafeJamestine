@@ -4,11 +4,19 @@ import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Advances to feedback (Phase 5). Does NOT freeze — the session stays active/editable.
-export function CompleteButton({ sessionId }: { sessionId: string }) {
+// Advances to the next stepper phase (Post-brew for brewed coffee, Tasting for specialty).
+// Does NOT freeze — the session stays active/editable; only Mark complete changes status.
+export function CompleteButton({
+  sessionId,
+  recipeType,
+}: {
+  sessionId: string;
+  recipeType: "brewed_coffee" | "specialty_drink";
+}) {
   const router = useRouter();
+  const nextPhase = recipeType === "brewed_coffee" ? "postbrew" : "tasting";
   return (
-    <Button size="lg" className="w-full" onClick={() => router.push(`/sessions/${sessionId}`)}>
+    <Button size="lg" className="w-full" onClick={() => router.push(`/sessions/${sessionId}?phase=${nextPhase}`)}>
       <Check className="size-5" />
       Complete
     </Button>

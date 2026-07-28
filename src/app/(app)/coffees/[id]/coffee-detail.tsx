@@ -18,6 +18,7 @@ import { ReferenceSelect } from "@/components/reference-select";
 import { MultiReferenceSelect } from "@/components/multi-reference-select";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -37,6 +38,8 @@ type Names = {
   producer: string | null;
 };
 
+type UsedSession = { id: string; label: string; date: string | null; status: "active" | "complete" };
+
 export function CoffeeDetail({
   coffee,
   names: initialNames,
@@ -46,6 +49,7 @@ export function CoffeeDetail({
   isNew,
   rating,
   ratingCount,
+  sessions,
 }: {
   coffee: Coffee;
   names: Names;
@@ -55,6 +59,7 @@ export function CoffeeDetail({
   isNew: boolean;
   rating: number | null;
   ratingCount: number;
+  sessions: UsedSession[];
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"view" | "edit">(isNew ? "edit" : "view");
@@ -410,6 +415,33 @@ export function CoffeeDetail({
 
       {/* Bags managed independently of the coffee form */}
       <BagsSection coffeeId={row.id} />
+
+      {/* Sessions that used this coffee — the coffee → session direction (navigation only). */}
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold">Sessions that used this coffee</h2>
+        {sessions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No sessions yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {sessions.map((s) => (
+              <li key={s.id}>
+                <Link
+                  href={`/sessions/${s.id}?from=/coffees/${row.id}`}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 hover:bg-accent"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="font-medium">{s.label}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {s.date ? new Date(s.date).toLocaleDateString() : ""}
+                    </span>
+                  </span>
+                  <Badge variant={s.status === "active" ? "default" : "secondary"}>{s.status}</Badge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

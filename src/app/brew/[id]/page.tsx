@@ -65,7 +65,7 @@ export default async function BrewPage({
 
       <footer className="sticky bottom-0 border-t border-border bg-background/95 p-4 backdrop-blur">
         <div className="mx-auto w-full max-w-2xl">
-          <CompleteButton sessionId={id} />
+          <CompleteButton sessionId={id} recipeType={session.recipe_type} />
         </div>
       </footer>
     </div>

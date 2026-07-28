@@ -64,8 +64,28 @@ export default async function CoffeePage({
   const ratingCount = overalls.filter((o) => o != null).length;
   const rating = coffeeRating(overalls, coffee.rating_override);
 
+  // Sessions that used this coffee (two-way relationship) — navigation only, no analysis.
+  const { data: usedRows } = await supabase
+    .from("sessions")
+    .select("id, status, brewed_at, created_at, recipes(name), coffee_bags!inner(coffee_id)")
+    .eq("coffee_bags.coffee_id", id)
+    .order("created_at", { ascending: false });
+  const sessions = ((usedRows ?? []) as unknown as Array<{
+    id: string;
+    status: "active" | "complete";
+    brewed_at: string | null;
+    created_at: string;
+    recipes: { name: string | null } | null;
+  }>).map((s) => ({
+    id: s.id,
+    label: s.recipes?.name ?? "Session",
+    date: s.brewed_at ?? s.created_at,
+    status: s.status,
+  }));
+
   return (
     <CoffeeDetail
+      sessions={sessions}
       coffee={coffee}
       names={{
         roaster: coffee.roasters?.name ?? null,
