@@ -17,6 +17,9 @@ export async function createCoffee() {
     .select("id")
     .single();
   if (error || !data) throw new Error(error?.message ?? "create failed");
+  // Rail lives in coffees/layout.tsx (preserved across child nav) — revalidate it so the new
+  // coffee shows immediately.
+  revalidatePath("/coffees", "layout");
   redirect(`/coffees/${data.id}?new=1`);
 }
 
@@ -36,6 +39,6 @@ export async function deleteCoffee(id: string) {
       .remove(files.map((f) => `${prefix}/${f.name}`));
   }
   await supabase.from("coffees").delete().eq("id", id);
-  revalidatePath("/coffees");
+  revalidatePath("/coffees", "layout");
   redirect("/coffees");
 }
