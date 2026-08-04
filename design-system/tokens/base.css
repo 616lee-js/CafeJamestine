@@ -1,0 +1,10 @@
+/* Element defaults so a bare page picks up the brand with no extra work. */
+html{font-family:var(--font-sans)}
+body{margin:0;background:var(--surface-page);color:var(--text-body);font-family:var(--font-sans);font-size:var(--text-sm);line-height:var(--leading-sm);-webkit-font-smoothing:antialiased}
+*{border-color:var(--border)}
+h1,h2,h3,h4{margin:0;color:var(--text-heading);font-family:var(--font-display);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-tight)}
+a{color:var(--text-link);text-decoration:none;text-underline-offset:4px}
+a:hover{color:var(--text-link-hover);text-decoration:underline}
+:focus-visible{outline:none;box-shadow:0 0 0 var(--ring-width) color-mix(in oklab,var(--ring) 45%,transparent)}
+.tabular{font-variant-numeric:tabular-nums}
+.eyebrow{font-size:var(--text-xs);line-height:var(--leading-xs);font-weight:var(--weight-semibold);text-transform:uppercase;letter-spacing:var(--tracking-wide);color:var(--text-eyebrow)}

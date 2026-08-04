@@ -1,0 +1,10 @@
+:root{
+  /* Short and unfussy. Colour and opacity, plus the switch thumb and dialog zoom. */
+  --duration-fast:120ms;   /* @kind other */
+  --duration-base:160ms;   /* @kind other */
+  /* dialog + phase transitions */
+  --duration-slow:220ms;   /* @kind other */
+  --ease-standard:cubic-bezier(0.4,0,0.2,1);  /* @kind other */
+  --ease-out:cubic-bezier(0,0,0.2,1);         /* @kind other */
+  --transition-colors:color var(--duration-base) var(--ease-standard),background-color var(--duration-base) var(--ease-standard),border-color var(--duration-base) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard); /* @kind other */
+}

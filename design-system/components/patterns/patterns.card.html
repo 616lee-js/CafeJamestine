@@ -1,0 +1,47 @@
+<!-- @dsCard group="Components" viewport="700x430" name="Patterns — rows, tabs, steps, confirms" subtitle="The composite shapes the app repeats on every screen" -->
+<!doctype html><html><head><meta charset="utf-8"><title>Patterns</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:20px;background:var(--surface-page);font-family:var(--font-sans)}.grp{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.cap{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);width:100%;margin-bottom:-2px}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { Button, Badge, Card, CardHeader, CardContent, Icon, Toast, Input, Textarea, Label, Field, Select, Combobox, Switch, ListRow, SectionHeading, ViewRow, PhaseTabs, RatingControl, StepsTable, EmptyState, ConfirmPanel, Dialog } = window.CafJamestineDesignSystem_188632;
+function Demo(){
+  const [phase,setPhase]=React.useState("postbrew");
+  const [rating,setRating]=React.useState(3);
+  const [open,setOpen]=React.useState(false);
+  return <div style={{position:"relative",display:"flex",flexDirection:"column",gap:16}}>
+    <SectionHeading level="page" action={<Button size="sm"><Icon name="plus" />Start a session</Button>}>Sessions</SectionHeading>
+    <div style={{display:"flex",flexDirection:"column",gap:"var(--space-2)"}}>
+      <SectionHeading level="eyebrow">Active</SectionHeading>
+      <ListRow as="div" title="Ethiopia Guji" meta="3/14/2026" trailing={<Badge status="active">active</Badge>} />
+      <ListRow as="div" title="Cortado" meta="Specialty · 2× batch" trailing={<Badge variant="secondary">Specialty</Badge>} />
+      <SectionHeading level="eyebrow">History</SectionHeading>
+      <ListRow as="div" leading={<Icon name="star" size={16} color="var(--favorite)" />} title="Kalita 20 g standard" meta="Kalita Wave · standard" trailing={<Badge status="complete">complete</Badge>} />
+      <EmptyState>No coffees have an Active bag. Set a bag to Active on a coffee first.</EmptyState>
+    </div>
+    <PhaseTabs value={phase} onChange={setPhase} tabs={[{value:"confirm",label:"Confirm"},{value:"brew",label:"Brew",leading:<Icon name="play" size={14} />},{value:"postbrew",label:"Post-brew"},{value:"tasting",label:"Tasting"}]} />
+    <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:"var(--space-5)",alignItems:"start"}}>
+      <StepsTable steps={[{time:"0:00",description:"Bloom, centre pour",weight:50,flow:null},{time:"0:45",description:"Spiral to 150 g",weight:150,flow:3.2},{time:"1:30",description:"Final pour, flat bed",weight:300,flow:4.1}]} />
+      <div style={{display:"flex",flexDirection:"column",gap:"var(--space-3)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"var(--space-3)"}}>
+          <span style={{fontSize:"var(--text-sm)",fontWeight:500}}>Acidity</span><RatingControl value={rating} onChange={setRating} />
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",columnGap:"var(--space-8)"}}>
+          <ViewRow label="Method" value="V60" /><ViewRow label="Dose (g)" value="18" />
+          <ViewRow label="Water (g)" value="300" /><ViewRow label="Temp (°C)" value="93" />
+        </div>
+        <Button variant="outline" size="sm" onClick={()=>setOpen(true)}><Icon name="trash-2" size={16} />Show delete dialog</Button>
+      </div>
+    </div>
+    <ConfirmPanel confirmLabel="Mark complete" confirmIcon={<Icon name="check" />} onCancel={()=>{}}
+      message="Mark complete? This snapshots days-rested + brew date and marks the workflow done. You can still edit it afterward." />
+    <Dialog open={open} onClose={()=>setOpen(false)} title="Delete coffee “Ethiopia Guji”?"
+      footer={<><Button variant="ghost" onClick={()=>setOpen(false)}>Cancel</Button><Button variant="destructive" onClick={()=>setOpen(false)}>Delete</Button></>} />
+  </div>}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script></body></html>

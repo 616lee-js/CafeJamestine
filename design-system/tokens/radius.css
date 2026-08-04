@@ -1,0 +1,10 @@
+:root{
+  --radius:0.625rem;
+  --radius-sm:calc(var(--radius) * 0.6);    /* 6px  — menu items */
+  --radius-md:calc(var(--radius) * 0.8);    /* 8px  — controls */
+  --radius-lg:var(--radius);                /* 10px — rows, dialogs */
+  --radius-xl:calc(var(--radius) * 1.4);    /* 14px — cards */
+  --radius-2xl:calc(var(--radius) * 1.8);   /* 18px — panels */
+  --radius-3xl:calc(var(--radius) * 2.6);   /* 26px — brew-mode parameter tiles */
+  --radius-full:9999px;                     /* pills */
+}

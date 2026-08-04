@@ -1,0 +1,18 @@
+:root{
+  /* Hairline borders do most of the grouping; shadows are a whisper.
+     Tinted with indigo ink rather than neutral black. */
+  --shadow-xs:0 1px 2px 0 rgb(26 26 46 / 0.05);
+  --shadow-sm:0 1px 3px 0 rgb(26 26 46 / 0.07), 0 1px 2px -1px rgb(26 26 46 / 0.07);
+  --shadow-md:0 4px 8px -2px rgb(26 26 46 / 0.09), 0 2px 4px -2px rgb(26 26 46 / 0.06);
+  --shadow-lg:0 12px 20px -4px rgb(26 26 46 / 0.11), 0 4px 8px -4px rgb(26 26 46 / 0.07);
+  --shadow-none:none;
+
+  --ring-width:3px;
+  --overlay:rgb(26 26 46 / 0.5);
+  --blur-bar:blur(10px); /* @kind other */
+
+  /* Reading state vs editing state — the app's core visual distinction.
+     Read is flat on paper; edit gets a tinted, inset field surface. */
+  --edit-surface:var(--lavender-50);
+  --edit-border:var(--lavender-200);
+}

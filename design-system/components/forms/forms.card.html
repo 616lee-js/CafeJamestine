@@ -1,0 +1,44 @@
+<!-- @dsCard group="Components" viewport="700x400" name="Forms — Input, Select, Combobox, Switch" subtitle="Labelled autosave fields at touch height" -->
+<!doctype html><html><head><meta charset="utf-8"><title>Forms</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:20px;background:var(--surface-page);font-family:var(--font-sans)}.grp{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.cap{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);width:100%;margin-bottom:-2px}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { Button, Badge, Card, CardHeader, CardContent, Icon, Toast, Input, Textarea, Label, Field, Select, Combobox, Switch, ListRow, SectionHeading, ViewRow, PhaseTabs, RatingControl, StepsTable, EmptyState, ConfirmPanel, Dialog } = window.CafJamestineDesignSystem_188632;
+function Demo(){
+  const [iced,setIced]=React.useState(true);
+  const [ref,setRef]=React.useState({id:"1",name:"Onyx Coffee Lab"});
+  return <div style={{display:"flex",flexDirection:"column",gap:16}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"var(--space-5)"}}>
+      <span className="cap">Field + Input — touch height, commits on blur</span>
+      <Field label="Grind setting"><Input size="touch" defaultValue="4.2" /></Field>
+      <Field label="Dose (g)"><Input size="touch" inputMode="decimal" placeholder="e.g. 18" /></Field>
+      <Field label="Price" hint="Money keeps 2 decimals"><Input size="touch" prefix="$" placeholder="0.00" inputMode="decimal" /></Field>
+      <Field label="Bloom time (m:ss)" hint="m:ss"><Input size="touch" inputMode="numeric" defaultValue="0:45" style={{width:"7rem"}} /></Field>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"var(--space-5)"}}>
+      <span className="cap">Select (closed list) · Combobox (user list, inline create)</span>
+      <Field label="Method"><Select size="touch" value="v60" options={[{value:"__none__",label:"— None —"},{value:"v60",label:"V60"},{value:"espresso",label:"Espresso"}]} /></Field>
+      <Field label="Roaster"><Combobox value={ref&&ref.id} valueName={ref&&ref.name} options={[{id:"1",name:"Onyx Coffee Lab"},{id:"2",name:"Sey"},{id:"3",name:"Tim Wendelboe"}]} onChange={(id,name)=>setRef(id?{id,name}:null)} /></Field>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"var(--space-5)",alignItems:"start"}}>
+      <span className="cap">Textarea · Switch row · Label sizes · invalid + disabled</span>
+      <Field label="Post-brew notes"><Textarea placeholder="e.g. thinner than last time, pulled early" /></Field>
+      <div style={{display:"flex",flexDirection:"column",gap:"var(--space-2)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"var(--space-4)",border:"1px solid var(--border)",borderRadius:"var(--radius)",padding:"var(--space-3)"}}>
+          <Label>Iced</Label><Switch checked={iced} onChange={setIced} />
+        </div>
+        <div style={{display:"flex",gap:"var(--space-2)"}}>
+          <Input size="touch" invalid defaultValue="12/40/26" /><Input size="touch" disabled placeholder="Disabled" />
+        </div>
+        <div style={{display:"flex",gap:"var(--space-4)"}}><Label>Label sm</Label><Label size="xs">Label xs</Label></div>
+      </div>
+    </div>
+  </div>}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script></body></html>

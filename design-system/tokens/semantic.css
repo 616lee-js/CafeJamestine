@@ -1,0 +1,64 @@
+/* Semantic aliases. Names still mirror the app's shadcn variable set 1:1, so this block can
+   replace the :root in src/app/globals.css and every existing className keeps working. */
+:root{
+  color-scheme:light;
+
+  --background:var(--paper);
+  --foreground:var(--indigo-950);
+  --card:var(--paper-raised);
+  --card-foreground:var(--indigo-950);
+  --popover:var(--paper-raised);
+  --popover-foreground:var(--indigo-950);
+
+  --primary:var(--indigo-600);
+  --primary-foreground:#ffffff;
+  --secondary:var(--indigo-50);
+  --secondary-foreground:var(--indigo-800);
+  --muted:var(--slate-100);
+  --muted-foreground:var(--slate-500);
+  --accent:var(--lavender-50);
+  --accent-foreground:var(--indigo-800);
+  --destructive:var(--danger);
+  --destructive-foreground:#ffffff;
+
+  --border:var(--slate-200);
+  --input:var(--slate-200);
+  --ring:var(--indigo-400);
+
+  /* Text roles */
+  --text-heading:var(--indigo-950);
+  --text-body:var(--indigo-900);
+  --text-muted:var(--slate-500);
+  --text-eyebrow:var(--slate-500);
+  --text-inverse:#ffffff;
+  --text-link:var(--indigo-600);
+  --text-link-hover:var(--indigo-700);
+  --text-danger:var(--danger);
+
+  /* Surfaces */
+  --surface-page:var(--paper);
+  --surface-card:var(--paper-raised);
+  --surface-sunken:var(--paper-sunken);
+  --surface-rail:var(--paper-sunken);
+  --surface-brand:var(--indigo-600);
+  --surface-brand-soft:var(--lavender-50);
+  --surface-selected:var(--lavender-50);
+
+  /* Bag lifecycle — deliberately NOT the coffee ramp. Neutral indigo/lavender family so the
+     ramp only ever means "where you are in a session". */
+  --bag-frozen:var(--indigo-400);      --bag-frozen-soft:var(--indigo-50);
+  --bag-resting:var(--lavender-600);   --bag-resting-soft:var(--lavender-50);
+  --bag-active:var(--mint-600);        --bag-active-soft:var(--mint-50);
+  --bag-finished:var(--slate-500);     --bag-finished-soft:var(--slate-100);
+
+  /* Session status */
+  --session-active:var(--indigo-600);   --session-active-soft:var(--indigo-50);
+  --session-complete:var(--slate-500);  --session-complete-soft:var(--slate-100);
+
+  --favorite:#d19a2e;
+
+  /* Logo */
+  --logo-cup:var(--indigo-600);
+  --logo-steam:var(--lavender-500);
+  --logo-steam-reversed:var(--lavender-300);
+}

@@ -1,0 +1,66 @@
+/* Base palette.
+   Indigo is James's half — the primary, the action, the ink.
+   Lavender is Christine's — accent, soft surfaces, the steam in the mark.
+   Mint carries positive/confirmed state.
+   The coffee-lifecycle ramp (green→red→yellow→brown) is reserved for ONE job: the session
+   phase stepper. It is not a general palette. */
+:root{
+  /* Indigo — brand + primary */
+  --indigo-50:#eef0f9;
+  --indigo-100:#dce0f2;
+  --indigo-200:#b9c0e6;
+  --indigo-300:#8f99d4;
+  --indigo-400:#6b76c0;
+  --indigo-500:#5a5fb8;
+  --indigo-600:#3b3f8f;   /* primary */
+  --indigo-700:#2f3376;   /* primary hover */
+  --indigo-800:#232659;
+  --indigo-900:#191b3f;
+  --indigo-950:#1a1a2e;   /* ink */
+
+  /* Lavender — accent + soft surface */
+  --lavender-50:#efe9f8;
+  --lavender-100:#e4daf3;
+  --lavender-200:#cdbde9;
+  --lavender-300:#c9b3e8;  /* reversed steam */
+  --lavender-400:#a78bcf;
+  --lavender-500:#8f74c4;  /* steam on light — 3.7:1 on paper */
+  --lavender-600:#7659ad;
+  --lavender-700:#5d4489;
+
+  /* Mint — positive state */
+  --mint-50:#e6f4f0;
+  --mint-100:#d2ece5;
+  --mint-400:#7fcbb8;
+  --mint-500:#5fb8a4;
+  --mint-600:#3f9a86;
+  --mint-700:#2e7566;
+
+  /* Neutrals — a hair cool, so they sit under indigo without going grey-blue */
+  --paper:#fcfbfa;
+  --paper-raised:#ffffff;
+  --paper-sunken:#f4f2f0;
+  --slate-100:#f1f0f5;
+  --slate-200:#e4e1ec;
+  --slate-300:#cfcbdb;
+  --slate-500:#6f6b80;
+  --slate-700:#413d52;
+
+  /* Coffee lifecycle — session phases ONLY. From James's espresso cups. */
+  --phase-plan:#4e7c4a;       /* green — growth */
+  --phase-plan-soft:#e8f0e7;
+  --phase-brew:#a8323c;       /* red — cherries */
+  --phase-brew-soft:#f8e8e9;
+  --phase-post:#d19a2e;       /* yellow — dried */
+  --phase-post-soft:#fbf2de;
+  --phase-taste:#6f4e37;      /* brown — roast */
+  --phase-taste-soft:#f0eae5;
+
+  /* Semantic hues */
+  --danger:oklch(0.577 0.245 27.325);   /* carried verbatim from the app's globals.css */
+  --danger-soft:#fbeae7;
+  --success:var(--mint-600);
+  --success-soft:var(--mint-50);
+  --warning:#b4790a;
+  --warning-soft:#fdf1d6;
+}
