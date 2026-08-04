@@ -15,6 +15,7 @@ const PRIMARY = [
 const SECONDARY = [
   { href: "/equipment", label: "Equipment" },
   { href: "/reference", label: "Reference" },
+  { href: "/feedback", label: "Feedback" },
 ];
 
 function useIsActive() {
@@ -25,7 +26,7 @@ function useIsActive() {
 export function PrimaryNav() {
   const isActive = useIsActive();
   return (
-    <nav className="flex items-center gap-1">
+    <nav className="flex shrink-0 items-center gap-1">
       {PRIMARY.map((item) => {
         const active = isActive(item.href);
         return (
@@ -51,7 +52,7 @@ export function PrimaryNav() {
 export function SecondaryNav() {
   const isActive = useIsActive();
   return (
-    <nav className="flex items-center gap-1">
+    <nav className="flex shrink-0 items-center gap-1">
       {SECONDARY.map((item) => {
         const active = isActive(item.href);
         return (

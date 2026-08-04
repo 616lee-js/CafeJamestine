@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Instrument_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { FeedbackWidget } from "@/components/feedback-widget";
 
 // Bricolage Grotesque — display + headings. Instrument Sans — the interface, and what
 // makes brew mode legible at arm's length. Geist Mono — tokens and tabular readouts.
@@ -58,6 +59,8 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
+        {/* Root-level so it reaches every page — the (app) group would miss brew mode and auth. */}
+        <FeedbackWidget />
       </body>
     </html>
   );

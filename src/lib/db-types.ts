@@ -220,3 +220,20 @@ export interface RecipeIngredient {
   created_at: string;
   updated_at: string;
 }
+
+export type FeedbackKind = "bug" | "request";
+export const FEEDBACK_KINDS: FeedbackKind[] = ["bug", "request"];
+export type FeedbackStatus = "new" | "complete";
+
+// The widget renders on signed-out pages too, so user_id is nullable here (unlike every
+// other user table, which is owner-scoped and NOT NULL).
+export interface Feedback {
+  id: string;
+  user_id: string | null;
+  kind: FeedbackKind;
+  body: string;
+  page_path: string | null;
+  status: FeedbackStatus;
+  created_at: string;
+  updated_at: string;
+}

@@ -23,16 +23,16 @@ export default async function AppLayout({
       {/* Global bar. Translucent + blurred so it stays visually distinct from any opaque
           in-section sub-bar that sticks beneath it (the session phase stepper). */}
       <header className="sticky top-0 z-20 border-b border-border bg-background/88 backdrop-blur-[10px]">
-        <div className="mx-auto flex h-[var(--topbar-height)] w-full max-w-[var(--shell-max)] items-center gap-6 px-[var(--shell-gutter)]">
+        {/* Scrolls horizontally rather than wrapping or hiding: the bar is a fixed 3.75rem and
+            every destination has to stay reachable on a phone. */}
+        <div className="mx-auto flex h-[var(--topbar-height)] w-full max-w-[var(--shell-max)] items-center gap-6 overflow-x-auto px-[var(--shell-gutter)]">
           {/* Brand routes to the launchpad, never to a section. */}
           <Link href="/" className="shrink-0">
             <Lockup size={22} />
           </Link>
           <PrimaryNav />
-          <div className="ml-auto flex items-center gap-3">
-            <div className="hidden sm:block">
-              <SecondaryNav />
-            </div>
+          <div className="ml-auto flex shrink-0 items-center gap-3">
+            <SecondaryNav />
             <span aria-hidden className="hidden h-5 w-px bg-border sm:block" />
             <form action={signOut}>
               <Button variant="ghost" size="sm" type="submit">
