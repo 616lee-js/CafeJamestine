@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Star } from "lucide-react";
 import type { RecipeType } from "@/lib/db-types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ListRail, RailGroup, RailItem } from "@/components/list-rail";
+import { NewRecipeButton } from "./new-recipe-button";
 
 export type RecipeListItem = {
   id: string;
@@ -18,91 +19,84 @@ export type RecipeListItem = {
   brew_methods: { name: string } | null;
 };
 
-type TypeFilter = "all" | RecipeType;
 type ScopeFilter = "all" | "standard" | "coffee" | "favorite";
 
+const SCOPES: { v: ScopeFilter; label: string }[] = [
+  { v: "all", label: "All" },
+  { v: "standard", label: "Standards" },
+  { v: "coffee", label: "Coffee-specific" },
+  { v: "favorite", label: "Favorites" },
+];
+
 export function RecipeList({ recipes }: { recipes: RecipeListItem[] }) {
-  const [type, setType] = useState<TypeFilter>("all");
+  const pathname = usePathname();
+  const selectedId = pathname.startsWith("/recipes/")
+    ? pathname.slice("/recipes/".length)
+    : null;
   const [scope, setScope] = useState<ScopeFilter>("all");
 
   const filtered = recipes.filter((r) => {
-    if (type !== "all" && r.recipe_type !== type) return false;
     if (scope === "standard" && !r.is_standard) return false;
     if (scope === "coffee" && r.coffee_id == null) return false;
     if (scope === "favorite" && !r.is_favorite) return false;
     return true;
   });
 
-  const typeOpts: { v: TypeFilter; label: string }[] = [
-    { v: "all", label: "All types" },
-    { v: "brewed_coffee", label: "Brewed" },
-    { v: "specialty_drink", label: "Specialty" },
-  ];
-  const scopeOpts: { v: ScopeFilter; label: string }[] = [
-    { v: "all", label: "All" },
-    { v: "standard", label: "Standards" },
-    { v: "coffee", label: "Coffee-specific" },
-    { v: "favorite", label: "Favorites" },
+  const groups: { key: RecipeType; label: string }[] = [
+    { key: "brewed_coffee", label: "Brewed" },
+    { key: "specialty_drink", label: "Specialty" },
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2">
-        {typeOpts.map((o) => (
-          <Button
-            key={o.v}
-            size="sm"
-            variant={type === o.v ? "default" : "outline"}
-            onClick={() => setType(o.v)}
-          >
-            {o.label}
-          </Button>
-        ))}
-        <span className="mx-1 w-px bg-border" />
-        {scopeOpts.map((o) => (
-          <Button
-            key={o.v}
-            size="sm"
-            variant={scope === o.v ? "default" : "outline"}
-            onClick={() => setScope(o.v)}
-          >
-            {o.label}
-          </Button>
-        ))}
-      </div>
-
+    <ListRail
+      title="Recipes"
+      action={<NewRecipeButton />}
+      filters={SCOPES.map((o) => (
+        <Button
+          key={o.v}
+          size="xs"
+          variant={scope === o.v ? "default" : "outline"}
+          aria-pressed={scope === o.v}
+          onClick={() => setScope(o.v)}
+        >
+          {o.label}
+        </Button>
+      ))}
+    >
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">No recipes match.</p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {filtered.map((r) => (
-            <li key={r.id}>
-              <Link
-                href={`/recipes/${r.id}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 hover:bg-accent"
-              >
-                <span className="flex items-center gap-2">
-                  {r.is_favorite && (
-                    <Star className="size-4 fill-amber-400 text-amber-400" />
-                  )}
-                  <span className="font-medium">{r.name || "Untitled recipe"}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {[
-                      r.brew_methods?.name,
-                      r.is_standard ? "standard" : r.coffees?.name,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
-                </span>
-                <Badge variant="secondary">
-                  {r.recipe_type === "brewed_coffee" ? "Brewed" : "Specialty"}
-                </Badge>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        groups.map((g) => {
+          const items = filtered.filter((r) => r.recipe_type === g.key);
+          if (items.length === 0) return null;
+          return (
+            <RailGroup key={g.key} label={g.label}>
+              {items.map((r) => (
+                <RailItem
+                  key={r.id}
+                  href={`/recipes/${r.id}`}
+                  name={r.name || "Untitled recipe"}
+                  meta={[
+                    r.brew_methods?.name,
+                    r.is_standard ? "standard" : r.coffees?.name,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  selected={r.id === selectedId}
+                  trailing={
+                    r.is_favorite ? (
+                      <Star
+                        aria-label="Favorite"
+                        className="size-[14px] fill-favorite text-favorite"
+                      />
+                    ) : undefined
+                  }
+                />
+              ))}
+            </RailGroup>
+          );
+        })
       )}
-    </div>
+    </ListRail>
   );
 }

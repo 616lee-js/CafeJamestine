@@ -14,10 +14,14 @@ export function TastingEditor({
   sessionId,
   categories,
   readOnly = false,
+  nextTimeField,
 }: {
   sessionId: string;
   categories: TastingCategory[];
   readOnly?: boolean;
+  /** Next-time adjustments lives on the session row, so the owner passes it in to sit
+   *  beside overall enjoyment in the left panel. */
+  nextTimeField?: React.ReactNode;
 }) {
   const [tastingId, setTastingId] = useState<string | null>(null);
   const [overall, setOverall] = useState<number | null>(null);
@@ -104,39 +108,48 @@ export function TastingEditor({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Tasting</h2>
-        {readOnly && (
-          <span className="text-sm">
-            <span className="text-muted-foreground">Overall enjoyment </span>
-            <span className="font-semibold">{overall ?? "—"}</span>
-            <span className="text-muted-foreground">/10</span>
-          </span>
+    <div className="grid items-start gap-6 min-[60rem]:grid-cols-[20rem_1fr]">
+      {/* Enjoyment and the forward-looking note — one score, set directly. */}
+      <div
+        className={
+          readOnly
+            ? "flex flex-col gap-5 rounded-2xl border border-border bg-card p-6"
+            : "flex flex-col gap-5 rounded-2xl border border-edit-border bg-edit-surface p-6"
+        }
+      >
+        {readOnly ? (
+          <div className="flex flex-col gap-0.5">
+            <span className="eyebrow">Overall enjoyment</span>
+            <span className="text-2xl font-semibold tabular-nums text-heading">
+              {overall != null ? `${overall}/10` : "—"}
+            </span>
+          </div>
+        ) : (
+          <RatingField
+            label="Overall enjoyment (1–10)"
+            defaultValue={overall}
+            hint="Standalone enjoyment, set directly (1–10, 0.5 steps)"
+            onCommit={saveOverall}
+          />
         )}
+        {nextTimeField}
       </div>
 
-      {!readOnly && (
-        <RatingField
-          label="Overall enjoyment (1–10)"
-          defaultValue={overall}
-          hint="Standalone enjoyment, set directly (1–10, 0.5 steps)"
-          onCommit={saveOverall}
-        />
-      )}
-
-      <p className="text-xs text-muted-foreground">
-        Per-category 1–5 describes prominence/intensity on each parameter&apos;s spectrum (not
-        enjoyment).
-      </p>
-
       <div className="flex flex-col gap-3">
+        <p className="text-sm text-muted-foreground">
+          Per-category 1–5 describes prominence on each parameter&apos;s spectrum — not
+          enjoyment.
+        </p>
+
         {categories.map((c) => {
           const e = entries[c.id] ?? { rating: null, notes: "" };
           return (
-            <div key={c.id} className="flex flex-col gap-1.5 rounded-lg border border-border p-3">
+            <div
+              key={c.id}
+              className="flex flex-col gap-1.5 rounded-lg border border-border bg-card p-4"
+            >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-medium">{c.display}</span>
+                <span className="text-base font-semibold text-heading">{c.display}</span>
                 <RatingControl
                   value={e.rating}
                   readOnly={readOnly}
@@ -152,15 +165,15 @@ export function TastingEditor({
             </div>
           );
         })}
-      </div>
 
-      <details className="text-xs text-muted-foreground">
-        <summary className="cursor-pointer">SCA flavor wheel (reference)</summary>
-        <p className="pt-1">
-          Use the SCA flavor wheel to help name notes (fruity, floral, nutty/cocoa, spices,
-          etc.) — a writing aid, not a required structure.
-        </p>
-      </details>
+        <details className="text-xs text-muted-foreground">
+          <summary className="cursor-pointer">SCA flavor wheel (reference)</summary>
+          <p className="pt-1">
+            Use the SCA flavor wheel to help name notes (fruity, floral, nutty/cocoa, spices,
+            etc.) — a writing aid, not a required structure.
+          </p>
+        </details>
+      </div>
     </div>
   );
 }

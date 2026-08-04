@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { ReferenceTable } from "@/lib/db-types";
@@ -10,26 +10,40 @@ import { Button } from "@/components/ui/button";
 
 type Row = { id: string; name: string; country?: string | null };
 
-export function ReferenceManager({
-  table,
-  label,
-}: {
-  table: ReferenceTable;
-  label: string;
-}) {
-  const [rows, setRows] = useState<Row[]>([]);
+const TABLES: { table: ReferenceTable; label: string }[] = [
+  { table: "roasters", label: "Roasters" },
+  { table: "countries", label: "Countries" },
+  { table: "regions", label: "Regions" },
+  { table: "producers", label: "Producers" },
+  { table: "processes", label: "Processes" },
+  { table: "varietals", label: "Varietals" },
+  { table: "units", label: "Units" },
+];
 
-  async function load() {
+// Regions carry a required country, so they are created from a coffee (where the country
+// is already known) rather than from a bare name here.
+const NEEDS_PARENT: ReferenceTable[] = ["regions"];
+
+export function ReferenceManager() {
+  const [table, setTable] = useState<ReferenceTable>("roasters");
+  const [rows, setRows] = useState<Row[]>([]);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const label = TABLES.find((t) => t.table === table)!.label;
+  const canAdd = !NEEDS_PARENT.includes(table);
+
+  async function load(t: ReferenceTable) {
     const supabase = createClient();
-    const select = table === "regions" ? "id, name, countries(name)" : "id, name";
-    const { data } = await supabase.from(table).select(select).order("name");
+    const select = t === "regions" ? "id, name, countries(name)" : "id, name";
+    const { data } = await supabase.from(t).select(select).order("name");
     const list = (data ?? []) as unknown as Array<Record<string, unknown>>;
     setRows(
       list.map((r) => ({
         id: String(r.id),
         name: String(r.name ?? ""),
         country:
-          table === "regions"
+          t === "regions"
             ? ((r.countries as { name: string } | null)?.name ?? null)
             : undefined,
       })),
@@ -38,9 +52,23 @@ export function ReferenceManager({
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    load(table);
   }, [table]);
+
+  async function add() {
+    const name = draft.trim();
+    if (name === "") return;
+    setBusy(true);
+    const supabase = createClient();
+    const { error } = await supabase.from(table).insert({ name });
+    setBusy(false);
+    if (error) {
+      toast.error(error.code === "23505" ? "That name already exists." : error.message);
+      return;
+    }
+    setDraft("");
+    load(table);
+  }
 
   async function rename(id: string, name: string) {
     const trimmed = name.trim();
@@ -69,24 +97,60 @@ export function ReferenceManager({
   }
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </h2>
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">None yet.</p>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap gap-1.5">
+        {TABLES.map((t) => (
+          <Button
+            key={t.table}
+            size="sm"
+            variant={t.table === table ? "default" : "outline"}
+            aria-pressed={t.table === table}
+            onClick={() => setTable(t.table)}
+          >
+            {t.label}
+          </Button>
+        ))}
+      </div>
+
+      {canAdd ? (
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            add();
+          }}
+        >
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={`Add to ${label}…`}
+            className="max-w-sm"
+          />
+          <Button type="submit" variant="outline" size="touch" disabled={busy || draft.trim() === ""}>
+            <Plus />
+            Add
+          </Button>
+        </form>
       ) : (
-        <ul className="flex flex-col gap-1.5">
+        <p className="text-sm text-muted-foreground">
+          Regions are added from a coffee, where the country is known.
+        </p>
+      )}
+
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing in {label} yet.</p>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
           {rows.map((r) => (
-            <RefRow key={r.id} row={r} onRename={rename} onDelete={remove} />
+            <RefChip key={r.id} row={r} onRename={rename} onDelete={remove} />
           ))}
         </ul>
       )}
-    </section>
+    </div>
   );
 }
 
-function RefRow({
+function RefChip({
   row,
   onRename,
   onDelete,
@@ -100,40 +164,55 @@ function RefRow({
 
   if (editing) {
     return (
-      <li className="flex items-center gap-2">
-        <Input value={value} onChange={(e) => setValue(e.target.value)} className="h-10" autoFocus />
+      <li className="flex items-center gap-1">
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="h-8 w-40"
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setValue(row.name);
+              setEditing(false);
+            }
+          }}
+        />
         <Button
-          size="sm"
+          size="icon-sm"
+          aria-label="Save name"
           onClick={() => {
             onRename(row.id, value);
             setEditing(false);
           }}
         >
-          Save
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setValue(row.name);
-            setEditing(false);
-          }}
-        >
-          Cancel
+          <Check />
         </Button>
       </li>
     );
   }
 
   return (
-    <li className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
-      <span className="flex-1 text-sm">{row.name}</span>
-      {row.country && <span className="text-xs text-muted-foreground">{row.country}</span>}
-      <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setEditing(true)} aria-label={`Edit ${row.name}`}>
-        <Pencil className="size-4" />
-      </Button>
-      <Button type="button" variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => onDelete(row.id)} aria-label={`Delete ${row.name}`}>
-        <Trash2 className="size-4" />
+    <li className="flex items-center gap-1 rounded-full border border-border bg-card py-1 pr-1 pl-3">
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="text-sm text-heading"
+        aria-label={`Rename ${row.name}`}
+      >
+        {row.name}
+        {row.country && (
+          <span className="ml-1.5 text-xs text-muted-foreground">{row.country}</span>
+        )}
+      </button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        className="rounded-full text-muted-foreground hover:text-destructive"
+        onClick={() => onDelete(row.id)}
+        aria-label={`Delete ${row.name}`}
+      >
+        <X />
       </Button>
     </li>
   );

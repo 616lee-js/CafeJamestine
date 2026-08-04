@@ -7,15 +7,15 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+// The app forces light (`color-scheme: light`); dark mode is deliberately out of scope, so
+// the toaster is pinned rather than reading a theme that no provider ever sets.
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="light"
+      position="bottom-right"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

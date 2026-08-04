@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { BagStatus } from "@/lib/db-types";
-import { coffeeGroup, isIncomplete } from "@/lib/compute";
+import { coffeeGroup, coffeeStatus, isIncomplete } from "@/lib/compute";
 import { Button } from "@/components/ui/button";
+import { ListRail, RailGroup, RailItem } from "@/components/list-rail";
+import { BagStatusBadge } from "@/components/status-badge";
 import { createCoffee } from "./actions";
 
 type Coffee = {
   id: string;
   name: string | null;
+  roaster: string | null;
   bags: { status: BagStatus; roast_date: string | null }[];
 };
 
@@ -39,29 +41,30 @@ export function CoffeeListRail({ coffees }: { coffees: Coffee[] }) {
   }
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-4 md:w-56">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">Coffees</h1>
+    <ListRail
+      title="Coffees"
+      action={
         <form action={createCoffee}>
           <Button type="submit" size="sm" variant="outline">
-            <Plus className="size-4" />
+            <Plus />
             New
           </Button>
         </form>
-      </div>
-
-      {incomplete.length > 0 && (
-        <Button
-          type="button"
-          variant={showIncomplete ? "default" : "ghost"}
-          size="sm"
-          className="justify-start"
-          onClick={() => setShowIncomplete((v) => !v)}
-        >
-          Incomplete ({incomplete.length})
-        </Button>
-      )}
-
+      }
+      filters={
+        incomplete.length > 0 ? (
+          <Button
+            type="button"
+            variant={showIncomplete ? "default" : "outline"}
+            size="xs"
+            aria-pressed={showIncomplete}
+            onClick={() => setShowIncomplete((v) => !v)}
+          >
+            Incomplete ({incomplete.length})
+          </Button>
+        ) : undefined
+      }
+    >
       {coffees.length === 0 ? (
         <p className="text-sm text-muted-foreground">No coffees yet.</p>
       ) : showIncomplete ? (
@@ -80,7 +83,7 @@ export function CoffeeListRail({ coffees }: { coffees: Coffee[] }) {
           )}
         </>
       )}
-    </aside>
+    </ListRail>
   );
 }
 
@@ -94,23 +97,20 @@ function Group({
   selectedId: string | null;
 }) {
   return (
-    <section className="flex flex-col gap-1">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</h2>
-      <ul className="flex flex-col gap-0.5">
-        {coffees.map((c) => (
-          <li key={c.id}>
-            <Link
-              href={`/coffees/${c.id}`}
-              className={
-                "block rounded-md px-3 py-2 text-sm font-medium " +
-                (c.id === selectedId ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground")
-              }
-            >
-              {c.name || "Untitled coffee"}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <RailGroup label={label}>
+      {coffees.map((c) => {
+        const status = coffeeStatus(c.bags);
+        return (
+          <RailItem
+            key={c.id}
+            href={`/coffees/${c.id}`}
+            name={c.name || "Untitled coffee"}
+            meta={c.roaster}
+            selected={c.id === selectedId}
+            trailing={status ? <BagStatusBadge status={status} /> : undefined}
+          />
+        );
+      })}
+    </RailGroup>
   );
 }

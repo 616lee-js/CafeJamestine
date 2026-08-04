@@ -1,13 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Bricolage Grotesque — display + headings. Instrument Sans — the interface, and what
+// makes brew mode legible at arm's length. Geist Mono — tokens and tabular readouts.
+const display = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
+const sans = Instrument_Sans({
+  variable: "--font-instrument",
+  subsets: ["latin"],
+});
+
+const mono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
@@ -22,13 +29,17 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   icons: {
-    icon: "/icon-192.png",
+    // SVG mark first; the PNG is the fallback for clients that will not take an SVG favicon.
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#fcfbfa",
   colorScheme: "light",
   width: "device-width",
   initialScale: 1,
@@ -43,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${display.variable} ${sans.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}

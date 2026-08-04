@@ -13,8 +13,10 @@ export const dynamic = "force-dynamic";
 type Bag = { roast_date: string | null; coffees: { name: string | null } | null } | null;
 type EquipRow = { id: string; name: string | null; equipment_categories: { name: string } | null };
 
-type Phase = "confirm" | "postbrew" | "make" | "tasting";
-const PHASES: Phase[] = ["confirm", "postbrew", "make", "tasting"];
+// "Plan" is the renamed Confirm phase. Brew is a separate full-screen route, not a
+// rendered phase, so it never appears here.
+type Phase = "plan" | "postbrew" | "make" | "tasting";
+const PHASES: Phase[] = ["plan", "postbrew", "make", "tasting"];
 
 export default async function SessionPage({
   params,
@@ -25,7 +27,7 @@ export default async function SessionPage({
 }) {
   const { id } = await params;
   const { phase: phaseParam, from } = await searchParams;
-  const initialPhase: Phase = PHASES.includes(phaseParam as Phase) ? (phaseParam as Phase) : "confirm";
+  const initialPhase: Phase = PHASES.includes(phaseParam as Phase) ? (phaseParam as Phase) : "plan";
   // Context-aware back: honor an internal entry path, else default to the Sessions list.
   const backHref = from && from.startsWith("/") ? from : "/sessions";
   const supabase = await createClient();

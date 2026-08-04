@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Coffee, GlassWater } from "lucide-react";
+import { ArrowLeft, ArrowRight, Coffee, GlassWater } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { RecipeType } from "@/lib/db-types";
@@ -124,55 +124,59 @@ export function NewSessionWizard() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <Link href="/sessions" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+    <div className="flex max-w-[var(--detail-measure)] flex-col gap-6">
+      <div className="flex items-center justify-between gap-3">
+        <Link href="/sessions" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-heading">
           <ArrowLeft className="size-4" />
           Sessions
         </Link>
-        {step > 1 && (
-          <Button variant="ghost" size="sm" onClick={() => setStep(step === 3 && recipeType === "brewed_coffee" ? 2 : 1)} disabled={busy}>
-            Back
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          <span className="eyebrow">Step {step} of 3</span>
+          {step > 1 && (
+            <Button variant="ghost" size="sm" onClick={() => setStep(step === 3 && recipeType === "brewed_coffee" ? 2 : 1)} disabled={busy}>
+              Back
+            </Button>
+          )}
+        </div>
       </div>
 
       {step === 1 && (
         <div className="flex flex-col gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Start a session</h1>
+          <h1 className="text-3xl">Start a session</h1>
           <p className="text-sm text-muted-foreground">What are you making? (This sets the type — permanent.)</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button variant="outline" className="h-auto flex-col gap-2 py-6" onClick={() => chooseType("brewed_coffee")}>
-              <Coffee className="size-7" />
-              <span className="font-medium">Brewed coffee</span>
-            </Button>
-            <Button variant="outline" className="h-auto flex-col gap-2 py-6" onClick={() => chooseType("specialty_drink")}>
-              <GlassWater className="size-7" />
-              <span className="font-medium">Specialty drink</span>
-            </Button>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TypeTile
+              icon={<Coffee className="size-8 text-primary" />}
+              label="Brewed coffee"
+              description="Pour-over and similar: a coffee, a recipe, timed pours."
+              onClick={() => chooseType("brewed_coffee")}
+            />
+            <TypeTile
+              icon={<GlassWater className="size-8 text-primary" />}
+              label="Specialty drink"
+              description="Lattes and signature drinks: ingredients and prose steps."
+              onClick={() => chooseType("specialty_drink")}
+            />
           </div>
         </div>
       )}
 
       {step === 2 && (
         <div className="flex flex-col gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Select coffee</h1>
-          <p className="text-sm text-muted-foreground">Only coffees with an Active bag can be brewed.</p>
+          <h1 className="text-3xl">Select coffee</h1>
+          <p className="text-sm text-muted-foreground">Only coffees with an active bag can be brewed.</p>
           {activeCoffees.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No coffees have an Active bag. Set a bag to Active on a coffee first.
+              No coffees have an active bag. Set a bag to active on a coffee first.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
               {activeCoffees.map((c) => (
                 <li key={c.coffeeId}>
-                  <button
-                    type="button"
+                  <ChoiceRow
+                    title={c.name}
                     onClick={() => { setCoffee(c); setStep(3); }}
-                    className="w-full rounded-lg border border-border px-4 py-3 text-left font-medium hover:bg-accent"
-                  >
-                    {c.name}
-                  </button>
+                  />
                 </li>
               ))}
             </ul>
@@ -182,30 +186,31 @@ export function NewSessionWizard() {
 
       {step === 3 && (
         <div className="flex flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Parameter source</h1>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl">Parameter source</h1>
             <p className="text-sm text-muted-foreground">
               {recipeType === "brewed_coffee" ? `Brewed coffee${coffee ? ` · ${coffee.name}` : ""}` : "Specialty drink"}
             </p>
           </div>
 
-          <Button onClick={() => start("new")} disabled={busy} className="w-full justify-start">
+          <Button size="hero" onClick={() => start("new")} disabled={busy} className="w-full justify-start">
             Build new (blank)
           </Button>
 
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Clone a recipe</h2>
+            <h2 className="eyebrow">Clone a recipe</h2>
             {recipes.length === 0 ? (
               <p className="text-sm text-muted-foreground">No recipes of this type.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {recipes.map((r) => (
                   <li key={r.id}>
-                    <button type="button" disabled={busy} onClick={() => start("recipe", r.id)}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-border px-4 py-3 text-left hover:bg-accent disabled:opacity-50">
-                      <span className="font-medium">{r.name || "Untitled recipe"}</span>
-                      <span className="text-sm text-muted-foreground">{r.is_standard ? "standard" : r.coffee}</span>
-                    </button>
+                    <ChoiceRow
+                      title={r.name || "Untitled recipe"}
+                      trailing={r.is_standard ? "standard" : r.coffee}
+                      disabled={busy}
+                      onClick={() => start("recipe", r.id)}
+                    />
                   </li>
                 ))}
               </ul>
@@ -213,17 +218,14 @@ export function NewSessionWizard() {
           </section>
 
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Clone a prior session</h2>
+            <h2 className="eyebrow">Clone a prior session</h2>
             {sessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">No prior sessions.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {sessions.map((s) => (
                   <li key={s.id}>
-                    <button type="button" disabled={busy} onClick={() => start("session", s.id)}
-                      className="w-full rounded-lg border border-border px-4 py-3 text-left hover:bg-accent disabled:opacity-50">
-                      {s.label}
-                    </button>
+                    <ChoiceRow title={s.label} disabled={busy} onClick={() => start("session", s.id)} />
                   </li>
                 ))}
               </ul>
@@ -232,5 +234,63 @@ export function NewSessionWizard() {
         </div>
       )}
     </div>
+  );
+}
+
+function TypeTile({
+  icon,
+  label,
+  description,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-start gap-2 rounded-2xl border border-border bg-card p-6 text-left shadow-sm transition-colors hover:border-ring hover:bg-surface-selected"
+    >
+      {icon}
+      <span className="font-display text-xl font-semibold tracking-snug text-heading">
+        {label}
+      </span>
+      <span className="text-sm text-muted-foreground">{description}</span>
+    </button>
+  );
+}
+
+function ChoiceRow({
+  title,
+  meta,
+  trailing,
+  disabled,
+  onClick,
+}: {
+  title: string;
+  meta?: string | null;
+  trailing?: string | null;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-surface-selected disabled:opacity-50"
+    >
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate font-medium text-heading">{title}</span>
+        {meta && <span className="text-sm text-muted-foreground">{meta}</span>}
+      </span>
+      <span className="flex shrink-0 items-center gap-3">
+        {trailing && <span className="text-sm text-muted-foreground">{trailing}</span>}
+        <ArrowRight className="size-4 text-muted-foreground" />
+      </span>
+    </button>
   );
 }

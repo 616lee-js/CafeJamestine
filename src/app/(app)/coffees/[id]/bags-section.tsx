@@ -20,7 +20,7 @@ import { DateField, MoneyField, TextareaField, ViewRow } from "@/components/fiel
 import { formatMoney } from "@/lib/format";
 import { ActionButton } from "@/components/action-button";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { BagStatusBadge } from "@/components/status-badge";
 import {
   Select,
   SelectContent,
@@ -179,16 +179,18 @@ export function BagsSection({ coffeeId }: { coffeeId: string }) {
   return (
     <section className="flex flex-col gap-4 border-t border-border pt-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Coffee bags</h2>
+        <h2 className="font-display text-lg font-semibold tracking-snug text-heading">
+          Bags
+        </h2>
         <Button size="sm" variant="outline" onClick={addBag}>
-          <Plus className="size-4" />
+          <Plus />
           Add bag
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
         <span className="flex items-center gap-1">
-          Status: {status ? <Badge variant="secondary">{status}</Badge> : "—"}
+          Status: {status ? <BagStatusBadge status={status} /> : "—"}
         </span>
         <span>
           Bags:{" "}
@@ -211,7 +213,7 @@ export function BagsSection({ coffeeId }: { coffeeId: string }) {
       {bags.length === 0 ? (
         <p className="text-sm text-muted-foreground">No bags yet.</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(15rem,1fr))]">
           {bags.map((bag) => (
             <BagCard
               key={bag.id}
@@ -277,24 +279,55 @@ function BagCard({
     setEditing(false);
   }
 
+  const description = [
+    bag.price != null ? formatMoney(bag.price) : null,
+    rested != null ? `${rested} days rested` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <li className="rounded-lg border border-border">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-      >
-        <span className="flex items-center gap-2">
+    <li className="flex flex-col rounded-xl border border-border bg-card">
+      <div className="flex flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-col">
+            <span className="font-medium text-heading">
+              {bag.roast_date ? `Roasted ${bag.roast_date}` : "No roast date"}
+            </span>
+            {description && (
+              <span className="text-sm text-muted-foreground">{description}</span>
+            )}
+          </div>
+          <BagStatusBadge status={bag.status} />
+        </div>
+
+        {/* Quick status change — logs an event at now, exactly like the timeline below,
+            so days-rested stays derived from the same source. */}
+        <div className="flex flex-wrap gap-1">
+          {BAG_STATUSES.map((s) => (
+            <Button
+              key={s}
+              type="button"
+              size="xs"
+              variant={s === bag.status ? "default" : "outline"}
+              aria-pressed={s === bag.status}
+              disabled={s === bag.status}
+              onClick={() => onAddEvent(bag.id, s, new Date().toISOString())}
+            >
+              {s}
+            </Button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-heading"
+        >
           {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-          <Badge variant="secondary">{bag.status}</Badge>
-          <span className="text-sm text-muted-foreground">
-            {bag.roast_date ? `roasted ${bag.roast_date}` : "no roast date"}
-          </span>
-        </span>
-        <span className="text-sm text-muted-foreground">
-          {rested == null ? "" : `${rested}d rested`}
-        </span>
-      </button>
+          {open ? "Hide details" : "Details"}
+        </button>
+      </div>
 
       {open && (
         <div className="flex flex-col gap-5 border-t border-border p-4">

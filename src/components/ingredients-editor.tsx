@@ -19,11 +19,14 @@ export function IngredientsEditor({
   parentId,
   readOnly = false,
   showMultiplier = false,
+  size = "default",
 }: {
   parentField: "recipe_id" | "session_id";
   parentId: string;
   readOnly?: boolean;
   showMultiplier?: boolean;
+  /** "brew" renders the read view at doing-distance scale (the Make phase). */
+  size?: "default" | "brew";
 }) {
   const [items, setItems] = useState<Item[]>([]);
   // Optional decimal batch multiplier (up to 1 dp), display-only — never alters the recipe.
@@ -96,10 +99,14 @@ export function IngredientsEditor({
   }
 
   if (readOnly) {
+    // The Make phase is read at doing-distance, so it borrows brew mode's step scale.
+    const big = size === "brew";
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Ingredients</h2>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold tracking-snug text-heading">
+            Ingredients
+          </h2>
           {showMultiplier && items.length > 0 && (
             <div className="flex items-center gap-2">
               <Label htmlFor="batch-mult" className="text-xs text-muted-foreground">Batch ×</Label>
@@ -116,18 +123,33 @@ export function IngredientsEditor({
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">None.</p>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-2">
             {items.map((i) => (
-              <li key={i.id} className="flex justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
-                <span>{i.name || "—"}</span>
-                <span className="text-muted-foreground">
+              <li
+                key={i.id}
+                className={
+                  big
+                    ? "flex justify-between gap-4 rounded-lg border border-border bg-card px-5 py-3 text-brew-step"
+                    : "flex justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-sm"
+                }
+              >
+                <span className={big ? "text-heading" : undefined}>{i.name || "—"}</span>
+                <span
+                  className={
+                    big
+                      ? "shrink-0 text-right font-semibold tabular-nums text-heading"
+                      : "shrink-0 text-right tabular-nums text-muted-foreground"
+                  }
+                >
                   {i.quantity != null ? `${scale(i.quantity, mult)}${i.unitName ? " " + i.unitName : ""}` : ""}
                 </span>
               </li>
             ))}
           </ul>
         )}
-        {mult !== 1 && <p className="text-xs text-muted-foreground">Showing {mult}× batch — recipe unchanged.</p>}
+        {mult !== 1 && (
+          <p className="text-sm text-muted-foreground">Showing {mult}× batch — recipe unchanged.</p>
+        )}
       </div>
     );
   }

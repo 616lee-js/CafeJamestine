@@ -4,122 +4,320 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+   Base palette and layout constants.
+   Source of truth: design-system/tokens/{colors,spacing,elevation,motion}.css.
+   These live in :root (not @theme) so they stay raw values with no Tailwind
+   namespace meaning — the semantic @theme block below maps them to utilities.
+   --------------------------------------------------------------------------- */
 :root {
   color-scheme: light;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+
+  /* Indigo — brand + primary. James's half. */
+  --indigo-50: #eef0f9;
+  --indigo-100: #dce0f2;
+  --indigo-200: #b9c0e6;
+  --indigo-300: #8f99d4;
+  --indigo-400: #6b76c0;
+  --indigo-500: #5a5fb8;
+  --indigo-600: #3b3f8f;
+  --indigo-700: #2f3376;
+  --indigo-800: #232659;
+  --indigo-900: #191b3f;
+  --indigo-950: #1a1a2e;
+
+  /* Lavender — accent + soft surface. Christine's half. */
+  --lavender-50: #efe9f8;
+  --lavender-100: #e4daf3;
+  --lavender-200: #cdbde9;
+  --lavender-300: #c9b3e8;
+  --lavender-400: #a78bcf;
+  --lavender-500: #8f74c4;
+  --lavender-600: #7659ad;
+  --lavender-700: #5d4489;
+
+  /* Mint — positive state. */
+  --mint-50: #e6f4f0;
+  --mint-100: #d2ece5;
+  --mint-400: #7fcbb8;
+  --mint-500: #5fb8a4;
+  --mint-600: #3f9a86;
+  --mint-700: #2e7566;
+
+  /* Neutrals — a hair cool, so they sit under indigo without going grey-blue. */
+  --paper: #fcfbfa;
+  --paper-raised: #ffffff;
+  --paper-sunken: #f4f2f0;
+  --slate-100: #f1f0f5;
+  --slate-200: #e4e1ec;
+  --slate-300: #cfcbdb;
+  --slate-500: #6f6b80;
+  --slate-700: #413d52;
+
+  /* Coffee lifecycle — the session phase stepper and nothing else. */
+  --phase-plan: #4e7c4a;
+  --phase-plan-soft: #e8f0e7;
+  --phase-brew: #a8323c;
+  --phase-brew-soft: #f8e8e9;
+  --phase-post: #d19a2e;
+  --phase-post-soft: #fbf2de;
+  --phase-taste: #6f4e37;
+  --phase-taste-soft: #f0eae5;
+
+  /* Semantic hues */
+  --danger: oklch(0.577 0.245 27.325);
+  --danger-soft: #fbeae7;
+  --success: var(--mint-600);
+  --success-soft: var(--mint-50);
+  --warning: #b4790a;
+  --warning-soft: #fdf1d6;
+  --favorite: #d19a2e;
+
+  /* shadcn semantic aliases — names unchanged, so every existing className keeps
+     working with the new values. */
+  --background: var(--paper);
+  --foreground: var(--indigo-950);
+  --card: var(--paper-raised);
+  --card-foreground: var(--indigo-950);
+  --popover: var(--paper-raised);
+  --popover-foreground: var(--indigo-950);
+  --primary: var(--indigo-600);
+  --primary-foreground: #ffffff;
+  --secondary: var(--indigo-50);
+  --secondary-foreground: var(--indigo-800);
+  --muted: var(--slate-100);
+  --muted-foreground: var(--slate-500);
+  --accent: var(--lavender-50);
+  --accent-foreground: var(--indigo-800);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--slate-200);
+  --input: var(--slate-200);
+  --ring: var(--indigo-400);
+
+  /* Text roles */
+  --ink-heading: var(--indigo-950);
+  --ink-body: var(--indigo-900);
+  --ink-muted: var(--slate-500);
+  --ink-inverse: #ffffff;
+  --ink-link: var(--indigo-600);
+  --ink-link-hover: var(--indigo-700);
+
+  /* Surfaces */
+  --surface-page: var(--paper);
+  --surface-card: var(--paper-raised);
+  --surface-sunken: var(--paper-sunken);
+  --surface-rail: var(--paper-sunken);
+  --surface-brand: var(--indigo-600);
+  --surface-brand-soft: var(--lavender-50);
+  --surface-selected: var(--lavender-50);
+
+  /* Reading state vs editing state — the app's core visual distinction. */
+  --edit-surface: var(--lavender-50);
+  --edit-border: var(--lavender-200);
+
+  /* Bag lifecycle — deliberately NOT the coffee ramp. */
+  --bag-frozen: var(--indigo-400);
+  --bag-frozen-soft: var(--indigo-50);
+  --bag-resting: var(--lavender-600);
+  --bag-resting-soft: var(--lavender-50);
+  --bag-active: var(--mint-600);
+  --bag-active-soft: var(--mint-50);
+  --bag-finished: var(--slate-500);
+  --bag-finished-soft: var(--slate-100);
+
+  /* Session status */
+  --session-active: var(--indigo-600);
+  --session-active-soft: var(--indigo-50);
+  --session-complete: var(--slate-500);
+  --session-complete-soft: var(--slate-100);
+
+  /* Logo */
+  --logo-cup: var(--indigo-600);
+  --logo-steam: var(--lavender-500);
+  --logo-steam-reversed: var(--lavender-300);
+
+  /* Layout — landscape-first. The old narrow centred column is deliberately gone. */
+  --shell-max: 120rem;
+  --shell-gutter: 1rem;
+  --topbar-height: 3.75rem;
+  --subbar-height: 3.25rem;
+  --list-pane: 20rem;
+  --list-pane-sm: 17rem;
+  --detail-measure: 56rem;
+  --brew-measure: 60rem;
+  --form-measure: 24rem;
+
+  /* Control heights. Touch is the default for anything that takes data. */
+  --control-xs: 1.5rem;
+  --control-sm: 2rem;
+  --control-md: 2.25rem;
+  --control-lg: 2.5rem;
+  --control-touch: 2.75rem;
+  --control-hero: 3.5rem;
+
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --ring-width: 3px;
+  --overlay: rgb(26 26 46 / 0.5);
+  --blur-bar: blur(10px);
+
+  --duration-fast: 120ms;
+  --duration-base: 160ms;
+  --duration-slow: 220ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
+@media (min-width: 64rem) {
+  :root {
+    --shell-gutter: 2rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Theme. Plain @theme (not `inline`) on purpose: it emits the custom properties
+   into :root *and* generates the utilities, so var(--font-sans), var(--text-sm)
+   and var(--shadow-md) are all resolvable at runtime.
+   --------------------------------------------------------------------------- */
+@theme {
+  --font-display: var(--font-bricolage), "Instrument Sans", system-ui, sans-serif;
+  --font-sans: var(--font-instrument), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-heading: var(--font-bricolage), "Instrument Sans", system-ui, sans-serif;
+
+  /* Interface scale */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.05rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.3rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.55rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.7rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.85rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.35rem;
+  --text-4xl: 2.5rem;
+  --text-4xl--line-height: 2.75rem;
+  --text-5xl: 3.5rem;
+  --text-5xl--line-height: 1.05;
+
+  /* Brew-mode scale — read from a mount at 1–2 ft. Brew mode only. */
+  --text-brew-label: 1rem;
+  --text-brew-label--line-height: 1.4rem;
+  --text-brew-step: 1.5rem;
+  --text-brew-step--line-height: 2rem;
+  --text-brew-time: 2rem;
+  --text-brew-time--line-height: 1.1;
+  --text-brew-title: 2.75rem;
+  --text-brew-title--line-height: 1.05;
+  --text-brew-value: 2.75rem;
+  --text-brew-value--line-height: 1.05;
+
+  --tracking-tight: -0.025em;
+  --tracking-snug: -0.015em;
+  --tracking-wide: 0.045em;
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-3xl: calc(var(--radius) * 2.6);
+
+  /* Hairline borders do the grouping; shadows are a whisper, tinted with indigo ink. */
+  --shadow-xs: 0 1px 2px 0 rgb(26 26 46 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(26 26 46 / 0.07), 0 1px 2px -1px rgb(26 26 46 / 0.07);
+  --shadow-md: 0 4px 8px -2px rgb(26 26 46 / 0.09), 0 2px 4px -2px rgb(26 26 46 / 0.06);
+  --shadow-lg: 0 12px 20px -4px rgb(26 26 46 / 0.11), 0 4px 8px -4px rgb(26 26 46 / 0.07);
+
+  --default-transition-duration: 160ms;
+  --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* shadcn colour roles */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Ink */
+  --color-heading: var(--ink-heading);
+  --color-body: var(--ink-body);
+  --color-link: var(--ink-link);
+  --color-link-hover: var(--ink-link-hover);
+
+  /* Surfaces */
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-rail: var(--surface-rail);
+  --color-surface-brand: var(--surface-brand);
+  --color-surface-brand-soft: var(--surface-brand-soft);
+  --color-surface-selected: var(--surface-selected);
+  --color-edit-surface: var(--edit-surface);
+  --color-edit-border: var(--edit-border);
+
+  /* Bag lifecycle */
+  --color-bag-frozen: var(--bag-frozen);
+  --color-bag-frozen-soft: var(--bag-frozen-soft);
+  --color-bag-resting: var(--bag-resting);
+  --color-bag-resting-soft: var(--bag-resting-soft);
+  --color-bag-active: var(--bag-active);
+  --color-bag-active-soft: var(--bag-active-soft);
+  --color-bag-finished: var(--bag-finished);
+  --color-bag-finished-soft: var(--bag-finished-soft);
+
+  /* Session status */
+  --color-session-active: var(--session-active);
+  --color-session-active-soft: var(--session-active-soft);
+  --color-session-complete: var(--session-complete);
+  --color-session-complete-soft: var(--session-complete-soft);
+
+  /* Session phase ramp — the stepper and its phase badges only. */
+  --color-phase-plan: var(--phase-plan);
+  --color-phase-plan-soft: var(--phase-plan-soft);
+  --color-phase-brew: var(--phase-brew);
+  --color-phase-brew-soft: var(--phase-brew-soft);
+  --color-phase-post: var(--phase-post);
+  --color-phase-post-soft: var(--phase-post-soft);
+  --color-phase-taste: var(--phase-taste);
+  --color-phase-taste-soft: var(--phase-taste-soft);
+
+  /* Other semantics */
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger-soft: var(--danger-soft);
+  --color-favorite: var(--favorite);
 }
 
-body {
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* Uppercase section label used above read grids, rail groups and brew captions. */
+@utility eyebrow {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--muted-foreground);
 }
 
 @layer base {
@@ -127,9 +325,33 @@ body {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-body;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    -webkit-font-smoothing: antialiased;
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    color: var(--ink-heading);
+  }
+  a {
+    color: var(--ink-link);
+    text-underline-offset: 4px;
+  }
+  a:hover {
+    color: var(--ink-link-hover);
+  }
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 var(--ring-width) color-mix(in oklab, var(--ring) 45%, transparent);
   }
 }

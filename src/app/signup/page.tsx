@@ -2,6 +2,10 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth-shell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { signUpWithInvite, type SignUpState } from "./actions";
 
 export default function SignUpPage() {
@@ -11,70 +15,51 @@ export default function SignUpPage() {
   );
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <h1 className="mb-6 text-2xl font-semibold tracking-tight">
-          Create account
-        </h1>
-        {state?.success ? (
-          <div className="rounded-lg border border-green-600/30 bg-green-50 p-4 text-sm text-green-800">
-            {state.success}{" "}
-            <Link href="/login" className="font-medium underline">
-              Go to sign in
-            </Link>
-          </div>
-        ) : (
-          <form action={formAction} className="flex flex-col gap-4">
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Invite code
-              <input
-                name="code"
-                type="text"
-                required
-                autoCapitalize="off"
-                className="h-12 rounded-lg border border-black/15 px-3 text-base outline-none focus:border-black/40"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Email
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="h-12 rounded-lg border border-black/15 px-3 text-base outline-none focus:border-black/40"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Password
-              <input
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                className="h-12 rounded-lg border border-black/15 px-3 text-base outline-none focus:border-black/40"
-              />
-            </label>
-            {state?.error && (
-              <p className="text-sm text-red-600">{state.error}</p>
-            )}
-            <button
-              type="submit"
-              disabled={pending}
-              className="h-12 rounded-full bg-foreground font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {pending ? "Creating…" : "Create account"}
-            </button>
-          </form>
-        )}
-        <p className="mt-6 text-center text-sm text-zinc-600">
+    <AuthShell
+      title="Create account"
+      footer={
+        <>
           Already have an account?{" "}
-          <Link href="/login" className="font-medium underline">
+          <Link href="/login" className="font-medium">
             Sign in
           </Link>
-        </p>
-      </div>
-    </main>
+        </>
+      }
+    >
+      {state?.success ? (
+        <div className="rounded-lg border border-[var(--mint-400)] bg-success-soft p-4 text-sm text-success">
+          {state.success}{" "}
+          <Link href="/login" className="font-medium">
+            Go to sign in
+          </Link>
+        </div>
+      ) : (
+        <form action={formAction} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="code">Invite code</Label>
+            <Input id="code" name="code" type="text" autoCapitalize="off" required />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" name="email" type="email" autoComplete="email" required />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+          </div>
+          {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+          <Button type="submit" size="touch" disabled={pending} className="w-full rounded-full">
+            {pending ? "Creating…" : "Create account"}
+          </Button>
+        </form>
+      )}
+    </AuthShell>
   );
 }

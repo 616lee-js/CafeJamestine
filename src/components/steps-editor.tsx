@@ -23,11 +23,14 @@ export function StepsEditor({
   parentId,
   mode,
   readOnly = false,
+  size = "default",
 }: {
   parentField: "recipe_id" | "session_id";
   parentId: string;
   mode: RecipeType;
   readOnly?: boolean;
+  /** "brew" renders the read view at doing-distance scale (the Make phase). */
+  size?: "default" | "brew";
 }) {
   const [steps, setSteps] = useState<RecipeStep[]>([]);
 
@@ -92,21 +95,22 @@ export function StepsEditor({
   const brewed = mode === "brewed_coffee";
 
   if (readOnly) {
+    const big = size === "brew";
     return (
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold">{brewed ? "Steps" : "Steps"}</h2>
+      <div className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-semibold tracking-snug text-heading">Steps</h2>
         {steps.length === 0 ? (
           <p className="text-sm text-muted-foreground">None.</p>
         ) : brewed ? (
           // Brewed-coffee steps render as a structured table.
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-3 py-2 font-medium">Time</th>
-                  <th className="px-3 py-2 font-medium">Description</th>
-                  <th className="px-3 py-2 font-medium">Total weight</th>
-                  <th className="px-3 py-2 font-medium">Flow rate</th>
+                <tr className="border-b border-border text-left">
+                  <th className="eyebrow px-3 py-2">Time</th>
+                  <th className="eyebrow px-3 py-2">Description</th>
+                  <th className="eyebrow px-3 py-2">Total weight</th>
+                  <th className="eyebrow px-3 py-2">Flow rate</th>
                 </tr>
               </thead>
               <tbody>
@@ -122,12 +126,30 @@ export function StepsEditor({
             </table>
           </div>
         ) : (
-          // Specialty prose steps render as an ordered list.
+          // Specialty prose steps render as an ordered list; the Make phase reads it at
+          // doing-distance, so the index and description take brew mode's scale there.
           <ol className="flex flex-col gap-2">
             {steps.map((s, i) => (
-              <li key={s.id} className="rounded-lg border border-border px-3 py-2 text-sm">
-                <span className="mr-2 font-medium text-muted-foreground">{i + 1}.</span>
-                {s.description}
+              <li
+                key={s.id}
+                className={
+                  big
+                    ? "flex items-baseline gap-4 rounded-lg border border-border bg-card px-5 py-3"
+                    : "rounded-lg border border-border bg-card px-3 py-2 text-sm"
+                }
+              >
+                <span
+                  className={
+                    big
+                      ? "font-display text-brew-time font-semibold tabular-nums text-phase-brew"
+                      : "mr-2 font-medium text-muted-foreground"
+                  }
+                >
+                  {big ? i + 1 : `${i + 1}.`}
+                </span>
+                <span className={big ? "text-brew-step text-heading" : undefined}>
+                  {s.description}
+                </span>
               </li>
             ))}
           </ol>

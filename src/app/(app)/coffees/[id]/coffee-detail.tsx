@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ImagePlus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { Coffee, SeedRow } from "@/lib/db-types";
@@ -19,6 +19,7 @@ import { MultiReferenceSelect } from "@/components/multi-reference-select";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SessionStatusBadge } from "@/components/status-badge";
 import {
   Select,
   SelectContent,
@@ -119,63 +120,64 @@ export function CoffeeDetail({
   }
 
   const tier3 = [row.elevation, row.salinity, row.humidity].some(Boolean);
+  const subline = [names.roaster, names.country].filter(Boolean).join(" · ");
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/coffees"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Coffees
-        </Link>
-        {mode === "view" ? (
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={startEdit}>
-              <Pencil className="size-4" />
-              Edit
-            </Button>
-            <ActionButton
-              variant="ghost"
-              size="sm"
-              className="text-destructive"
-              confirm={{ title: `Delete coffee “${row.name || "Untitled coffee"}”?`, confirmLabel: "Delete" }}
-              onAction={() => deleteCoffee(row.id)}
-            >
-              <Trash2 className="size-4" />
-              Delete
-            </ActionButton>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={cancel} disabled={busy}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={save} disabled={busy}>
-              Save
-            </Button>
-          </div>
-        )}
-      </div>
+      {/* The rail is the navigation on wide screens; this back link is the mobile way out. */}
+      <Link
+        href="/coffees"
+        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-heading min-[60rem]:hidden"
+      >
+        <ArrowLeft className="size-4" />
+        Coffees
+      </Link>
 
       {mode === "view" ? (
         /* ---------- VIEW ---------- */
-        <div className="flex flex-col gap-4">
-          <div className="flex items-start gap-4">
-            {imageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={imageUrl}
-                alt=""
-                className="size-24 shrink-0 rounded-lg border border-border object-cover"
-              />
-            )}
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {row.name || "Untitled coffee"}
-            </h1>
+        <div className="flex flex-col gap-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-start gap-4">
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="size-24 shrink-0 rounded-xl border border-border object-cover"
+                />
+              ) : (
+                <div
+                  aria-hidden
+                  className="flex size-24 shrink-0 items-center justify-center rounded-xl border border-border bg-muted"
+                >
+                  <ImagePlus className="size-6 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex min-w-0 flex-col gap-1">
+                <h1 className="text-3xl">{row.name || "Untitled coffee"}</h1>
+                {subline && <p className="text-base text-muted-foreground">{subline}</p>}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button size="sm" variant="outline" onClick={startEdit}>
+                <Pencil />
+                Edit
+              </Button>
+              <ActionButton
+                variant="ghost"
+                size="sm"
+                className="text-destructive"
+                confirm={{ title: `Delete coffee “${row.name || "Untitled coffee"}”?`, confirmLabel: "Delete" }}
+                onAction={() => deleteCoffee(row.id)}
+              >
+                <Trash2 />
+                Delete
+              </ActionButton>
+            </div>
           </div>
-          <div className="grid gap-x-8 sm:grid-cols-2">
+
+          {/* Read grid — empty fields render nothing at all, no dashes or N/A. */}
+          <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2 min-[60rem]:grid-cols-3">
             <ViewRow label="Roaster" value={names.roaster} />
             <ViewRow label="Country" value={names.country} />
             <ViewRow label="Region" value={names.region} />
@@ -192,6 +194,7 @@ export function CoffeeDetail({
                     : `${rating} · ${ratingCount} session${ratingCount === 1 ? "" : "s"}`
               }
             />
+            <ViewRow label="Elevation" value={row.elevation} />
             <ViewRow
               label="Website"
               value={
@@ -202,38 +205,35 @@ export function CoffeeDetail({
                 ) : undefined
               }
             />
+            <div className="flex flex-col gap-1 py-1.5">
+              <span className="eyebrow">Processes</span>
+              <MultiReferenceSelect
+                table="processes"
+                joinTable="coffee_processes"
+                refColumn="process_id"
+                coffeeId={row.id}
+                readOnly
+              />
+            </div>
+            <div className="flex flex-col gap-1 py-1.5">
+              <span className="eyebrow">Varietals</span>
+              <MultiReferenceSelect
+                table="varietals"
+                joinTable="coffee_varietals"
+                refColumn="varietal_id"
+                coffeeId={row.id}
+                readOnly
+              />
+            </div>
           </div>
+
           <ViewRow label="Flavor notes" value={row.flavor_notes} />
           <ViewRow label="Other notes / description" value={row.notes} />
-          <div className="flex flex-col gap-1 py-1.5">
-            <span className="text-xs uppercase tracking-wide text-muted-foreground">
-              Processes
-            </span>
-            <MultiReferenceSelect
-              table="processes"
-              joinTable="coffee_processes"
-              refColumn="process_id"
-              coffeeId={row.id}
-              readOnly
-            />
-          </div>
-          <div className="flex flex-col gap-1 py-1.5">
-            <span className="text-xs uppercase tracking-wide text-muted-foreground">
-              Varietals
-            </span>
-            <MultiReferenceSelect
-              table="varietals"
-              joinTable="coffee_varietals"
-              refColumn="varietal_id"
-              coffeeId={row.id}
-              readOnly
-            />
-          </div>
-          {tier3 && (
-            <details className="rounded-lg border border-border p-3">
+
+          {(row.salinity || row.humidity) && (
+            <details className="rounded-lg border border-border bg-card p-3">
               <summary className="cursor-pointer text-sm font-medium">More details</summary>
-              <div className="grid gap-x-8 pt-2 sm:grid-cols-2">
-                <ViewRow label="Elevation" value={row.elevation} />
+              <div className="grid gap-x-8 pt-2 sm:grid-cols-3">
                 <ViewRow label="Salinity" value={row.salinity} />
                 <ViewRow label="Humidity" value={row.humidity} />
               </div>
@@ -241,174 +241,195 @@ export function CoffeeDetail({
           )}
         </div>
       ) : (
-        /* ---------- EDIT ---------- */
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+        /* ---------- EDIT ----------
+           Lavender panel: you can tell you are editing without reading a label. */
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Badge tone="bag-resting">Editing</Badge>
+              <span className="text-sm text-muted-foreground">
+                Changes save when you press Save.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={cancel} disabled={busy}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={save} disabled={busy}>
+                Save
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-5 rounded-2xl border border-edit-border bg-edit-surface p-6 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <TextField
+                label="Name"
+                defaultValue={draft.name}
+                placeholder="e.g. Finca …"
+                onCommit={(v) => set({ name: v })}
+              />
+            </div>
+
+            <Field label="Roaster">
+              <ReferenceSelect
+                table="roasters"
+                value={draft.roaster_id}
+                valueName={draftNames.roaster}
+                onChange={(id, name) => {
+                  set({ roaster_id: id });
+                  setDraftNames((n) => ({ ...n, roaster: name }));
+                }}
+              />
+            </Field>
+            <Field label="Producer">
+              <ReferenceSelect
+                table="producers"
+                value={draft.producer_id}
+                valueName={draftNames.producer}
+                onChange={(id, name) => {
+                  set({ producer_id: id });
+                  setDraftNames((n) => ({ ...n, producer: name }));
+                }}
+              />
+            </Field>
+            <Field label="Country">
+              <ReferenceSelect
+                table="countries"
+                value={draft.country_id}
+                valueName={draftNames.country}
+                onChange={(id, name) => {
+                  set({ country_id: id, region_id: draft.region_id });
+                  setDraftNames((n) => ({ ...n, country: name }));
+                  if (draft.region_id) {
+                    set({ country_id: id, region_id: null });
+                    setDraftNames((n) => ({ ...n, country: name, region: null }));
+                  }
+                }}
+              />
+            </Field>
+            <Field label="Region" hint={!draft.country_id ? "Pick a country first" : undefined}>
+              <ReferenceSelect
+                table="regions"
+                value={draft.region_id}
+                valueName={draftNames.region}
+                countryId={draft.country_id}
+                disabled={!draft.country_id}
+                onChange={(id, name) => {
+                  set({ region_id: id });
+                  setDraftNames((n) => ({ ...n, region: name }));
+                }}
+              />
+            </Field>
+
+            <Field label="Roast level">
+              <Select
+                value={draft.roast_level_id ?? NONE}
+                onValueChange={(v) => set({ roast_level_id: v === NONE ? null : v })}
+              >
+                <SelectTrigger size="touch" className="w-full">
+                  <SelectValue placeholder="Select…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>— None —</SelectItem>
+                  {roastLevels.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
             <TextField
-              label="Name"
-              defaultValue={draft.name}
-              placeholder="e.g. Finca …"
-              onCommit={(v) => set({ name: v })}
+              label="Recommended rest"
+              defaultValue={draft.recommended_rest}
+              placeholder="e.g. 2–3 weeks from roast"
+              onCommit={(v) => set({ recommended_rest: v })}
             />
-          </div>
 
-          <Field label="Roaster">
-            <ReferenceSelect
-              table="roasters"
-              value={draft.roaster_id}
-              valueName={draftNames.roaster}
-              onChange={(id, name) => {
-                set({ roaster_id: id });
-                setDraftNames((n) => ({ ...n, roaster: name }));
-              }}
-            />
-          </Field>
-          <Field label="Producer">
-            <ReferenceSelect
-              table="producers"
-              value={draft.producer_id}
-              valueName={draftNames.producer}
-              onChange={(id, name) => {
-                set({ producer_id: id });
-                setDraftNames((n) => ({ ...n, producer: name }));
-              }}
-            />
-          </Field>
-          <Field label="Country">
-            <ReferenceSelect
-              table="countries"
-              value={draft.country_id}
-              valueName={draftNames.country}
-              onChange={(id, name) => {
-                set({ country_id: id, region_id: draft.region_id });
-                setDraftNames((n) => ({ ...n, country: name }));
-                if (draft.region_id) {
-                  set({ country_id: id, region_id: null });
-                  setDraftNames((n) => ({ ...n, country: name, region: null }));
-                }
-              }}
-            />
-          </Field>
-          <Field label="Region" hint={!draft.country_id ? "Pick a country first" : undefined}>
-            <ReferenceSelect
-              table="regions"
-              value={draft.region_id}
-              valueName={draftNames.region}
-              countryId={draft.country_id}
-              disabled={!draft.country_id}
-              onChange={(id, name) => {
-                set({ region_id: id });
-                setDraftNames((n) => ({ ...n, region: name }));
-              }}
-            />
-          </Field>
+            <Field label="Processes">
+              <MultiReferenceSelect
+                table="processes"
+                joinTable="coffee_processes"
+                refColumn="process_id"
+                coffeeId={row.id}
+                placeholder="Add process…"
+              />
+            </Field>
+            <Field label="Varietals">
+              <MultiReferenceSelect
+                table="varietals"
+                joinTable="coffee_varietals"
+                refColumn="varietal_id"
+                coffeeId={row.id}
+                placeholder="Add varietal…"
+              />
+            </Field>
 
-          <Field label="Roast level">
-            <Select
-              value={draft.roast_level_id ?? NONE}
-              onValueChange={(v) => set({ roast_level_id: v === NONE ? null : v })}
-            >
-              <SelectTrigger className="h-11 w-full">
-                <SelectValue placeholder="Select…" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>— None —</SelectItem>
-                {roastLevels.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <TextField
-            label="Recommended rest"
-            defaultValue={draft.recommended_rest}
-            placeholder="e.g. 2–3 weeks from roast"
-            onCommit={(v) => set({ recommended_rest: v })}
-          />
-
-          <Field label="Processes">
-            <MultiReferenceSelect
-              table="processes"
-              joinTable="coffee_processes"
-              refColumn="process_id"
-              coffeeId={row.id}
-              placeholder="Add process…"
+            <TextField
+              label="Website"
+              type="url"
+              defaultValue={draft.website_url}
+              placeholder="https://…"
+              onCommit={(v) => set({ website_url: v })}
             />
-          </Field>
-          <Field label="Varietals">
-            <MultiReferenceSelect
-              table="varietals"
-              joinTable="coffee_varietals"
-              refColumn="varietal_id"
-              coffeeId={row.id}
-              placeholder="Add varietal…"
+            <RatingField
+              label="Rating override (1–10)"
+              defaultValue={draft.rating_override}
+              hint="Optional; overrides computed aggregate"
+              onCommit={(v) => set({ rating_override: v })}
             />
-          </Field>
 
-          <TextField
-            label="Website"
-            type="url"
-            defaultValue={draft.website_url}
-            placeholder="https://…"
-            onCommit={(v) => set({ website_url: v })}
-          />
-          <RatingField
-            label="Rating override (1–10)"
-            defaultValue={draft.rating_override}
-            hint="Optional; overrides computed aggregate"
-            onCommit={(v) => set({ rating_override: v })}
-          />
+            <div className="sm:col-span-2">
+              <TextareaField
+                label="Flavor notes"
+                defaultValue={draft.flavor_notes}
+                onCommit={(v) => set({ flavor_notes: v })}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <TextareaField
+                label="Other notes / description"
+                defaultValue={draft.notes}
+                onCommit={(v) => set({ notes: v })}
+              />
+            </div>
 
-          <div className="sm:col-span-2">
-            <TextareaField
-              label="Flavor notes"
-              defaultValue={draft.flavor_notes}
-              onCommit={(v) => set({ flavor_notes: v })}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <TextareaField
-              label="Other notes / description"
-              defaultValue={draft.notes}
-              onCommit={(v) => set({ notes: v })}
-            />
-          </div>
+            <div className="sm:col-span-2">
+              <ImageUpload
+                pathPrefix={`${userId}/coffees/${row.id}`}
+                currentPath={row.image_path}
+                currentUrl={imageUrl}
+                onChange={(path) => set({ image_path: path })}
+              />
+            </div>
 
-          <div className="sm:col-span-2">
-            <ImageUpload
-              pathPrefix={`${userId}/coffees/${row.id}`}
-              currentPath={row.image_path}
-              currentUrl={imageUrl}
-              onChange={(path) => set({ image_path: path })}
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <details className="rounded-lg border border-border p-3" open={tier3}>
-              <summary className="cursor-pointer text-sm font-medium">
-                More details (rare)
-              </summary>
-              <div className="grid gap-5 pt-3 sm:grid-cols-2">
-                <TextField
-                  label="Elevation"
-                  defaultValue={draft.elevation}
-                  placeholder="e.g. 1900 masl"
-                  onCommit={(v) => set({ elevation: v })}
-                />
-                <TextField
-                  label="Salinity"
-                  defaultValue={draft.salinity}
-                  onCommit={(v) => set({ salinity: v })}
-                />
-                <TextField
-                  label="Humidity"
-                  defaultValue={draft.humidity}
-                  onCommit={(v) => set({ humidity: v })}
-                />
-              </div>
-            </details>
+            {/* The rarely-needed many, tucked away rather than removed. */}
+            <div className="sm:col-span-2">
+              <details className="rounded-lg border border-edit-border bg-card p-3" open={tier3}>
+                <summary className="cursor-pointer text-sm font-medium">
+                  More details (rare)
+                </summary>
+                <div className="grid gap-5 pt-3 sm:grid-cols-3">
+                  <TextField
+                    label="Elevation"
+                    defaultValue={draft.elevation}
+                    placeholder="e.g. 1900 masl"
+                    onCommit={(v) => set({ elevation: v })}
+                  />
+                  <TextField
+                    label="Salinity"
+                    defaultValue={draft.salinity}
+                    onCommit={(v) => set({ salinity: v })}
+                  />
+                  <TextField
+                    label="Humidity"
+                    defaultValue={draft.humidity}
+                    onCommit={(v) => set({ humidity: v })}
+                  />
+                </div>
+              </details>
+            </div>
           </div>
         </div>
       )}
@@ -417,8 +438,10 @@ export function CoffeeDetail({
       <BagsSection coffeeId={row.id} />
 
       {/* Sessions that used this coffee — the coffee → session direction (navigation only). */}
-      <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold">Sessions that used this coffee</h2>
+      <section className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-semibold tracking-snug text-heading">
+          Sessions brewed with this coffee
+        </h2>
         {sessions.length === 0 ? (
           <p className="text-sm text-muted-foreground">No sessions yet.</p>
         ) : (
@@ -427,15 +450,15 @@ export function CoffeeDetail({
               <li key={s.id}>
                 <Link
                   href={`/sessions/${s.id}?from=/coffees/${row.id}`}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 hover:bg-accent"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-surface-selected"
                 >
-                  <span className="flex items-center gap-2">
-                    <span className="font-medium">{s.label}</span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate font-medium text-heading">{s.label}</span>
                     <span className="text-sm text-muted-foreground">
                       {s.date ? new Date(s.date).toLocaleDateString() : ""}
                     </span>
                   </span>
-                  <Badge variant={s.status === "active" ? "default" : "secondary"}>{s.status}</Badge>
+                  <SessionStatusBadge status={s.status} />
                 </Link>
               </li>
             ))}

@@ -7,9 +7,10 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Personal specialty-coffee tracking.",
     start_url: "/",
     display: "standalone",
-    orientation: "portrait",
-    background_color: "#ffffff",
-    theme_color: "#ffffff",
+    // Landscape-first: brew mode is read from an eye-level mount, so never lock to portrait.
+    orientation: "any",
+    background_color: "#fcfbfa",
+    theme_color: "#fcfbfa",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

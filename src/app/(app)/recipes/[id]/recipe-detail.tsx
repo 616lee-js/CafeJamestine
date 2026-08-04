@@ -140,18 +140,43 @@ export function RecipeDetail({
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <Link href="/recipes" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-4" />
-          Recipes
-        </Link>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">{brewed ? "Brewed coffee" : "Specialty drink"}</Badge>
-          {mode === "view" ? (
-            <>
+      {/* The rail is the navigation on wide screens; this back link is the mobile way out. */}
+      <Link
+        href="/recipes"
+        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-heading min-[60rem]:hidden"
+      >
+        <ArrowLeft className="size-4" />
+        Recipes
+      </Link>
+
+      {mode === "view" ? (
+        /* ---------- VIEW ---------- */
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-1">
+              <h1 className="flex items-center gap-2 text-3xl">
+                {row.is_favorite && (
+                  <Star aria-label="Favorite" className="size-5 fill-favorite text-favorite" />
+                )}
+                {row.name || "Untitled recipe"}
+              </h1>
+              <p className="flex items-center gap-2 text-base text-muted-foreground">
+                <Badge variant="secondary">{brewed ? "Brewed coffee" : "Specialty drink"}</Badge>
+                {[
+                  brewed ? methodName(row.brew_method_id) : null,
+                  row.is_standard ? "standard" : names.coffee,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
               <Button size="sm" variant="outline" onClick={startEdit}>
-                <Pencil className="size-4" />
+                <Pencil />
                 Edit
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/sessions/new">Use in a session</Link>
               </Button>
               <ActionButton
                 variant="ghost"
@@ -160,31 +185,12 @@ export function RecipeDetail({
                 confirm={{ title: `Delete recipe “${row.name || "Untitled recipe"}”?`, confirmLabel: "Delete" }}
                 onAction={() => deleteRecipe(row.id)}
               >
-                <Trash2 className="size-4" />
+                <Trash2 />
                 Delete
               </ActionButton>
-            </>
-          ) : (
-            <>
-              <Button size="sm" variant="ghost" onClick={cancel} disabled={busy}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={save} disabled={busy}>
-                Save
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {mode === "view" ? (
-        /* ---------- VIEW ---------- */
-        <div className="flex flex-col gap-4">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            {row.is_favorite && <Star className="size-5 fill-amber-400 text-amber-400" />}
-            {row.name || "Untitled recipe"}
-          </h1>
-          <div className="grid gap-x-8 sm:grid-cols-2">
+            </div>
+          </div>
+          <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2 min-[60rem]:grid-cols-4">
             <ViewRow
               label="Scope"
               value={row.is_standard ? "Standard (generalist)" : names.coffee ? `For ${names.coffee}` : "Unfiled"}
@@ -212,7 +218,25 @@ export function RecipeDetail({
         </div>
       ) : (
         /* ---------- EDIT ---------- */
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Badge tone="bag-resting">Editing</Badge>
+              <span className="text-sm text-muted-foreground">
+                Changes save when you press Save.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={cancel} disabled={busy}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={save} disabled={busy}>
+                Save
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-8 rounded-2xl border border-edit-border bg-edit-surface p-6">
           <TextField
             label="Name"
             defaultValue={draft.name}
@@ -258,7 +282,7 @@ export function RecipeDetail({
             <section className="grid gap-5 sm:grid-cols-2">
               <Field label="Method">
                 <Select defaultValue={draft.brew_method_id ?? NONE} onValueChange={pickMethod}>
-                  <SelectTrigger className="h-11 w-full"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger size="touch" className="w-full"><SelectValue placeholder="Select…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>— None —</SelectItem>
                     {brewMethods.map((m) => (<SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>))}
@@ -270,7 +294,7 @@ export function RecipeDetail({
                   value={draft.water_anchor ?? NONE}
                   onValueChange={(v) => set({ water_anchor: v === NONE ? null : (v as WaterAnchor) })}
                 >
-                  <SelectTrigger className="h-11 w-full"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger size="touch" className="w-full"><SelectValue placeholder="Select…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>— None —</SelectItem>
                     <SelectItem value="input">input (brew water)</SelectItem>
@@ -322,6 +346,7 @@ export function RecipeDetail({
           <StepsEditor parentField="recipe_id" parentId={row.id} mode={row.recipe_type} />
 
           <TextareaField label="Notes" defaultValue={draft.notes} onCommit={(v) => set({ notes: v })} />
+          </div>
         </div>
       )}
     </div>
@@ -342,7 +367,7 @@ function EquipSelect({
   return (
     <Field label={label}>
       <Select value={value ?? NONE} onValueChange={(v) => onPick(v === NONE ? null : v)}>
-        <SelectTrigger className="h-11 w-full"><SelectValue placeholder="Select…" /></SelectTrigger>
+        <SelectTrigger size="touch" className="w-full"><SelectValue placeholder="Select…" /></SelectTrigger>
         <SelectContent>
           <SelectItem value={NONE}>— None —</SelectItem>
           {options.length === 0 && (

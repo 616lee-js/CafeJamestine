@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored design handoff: browser-only reference JSX with inline styles and CDN
+    // globals. It is documentation, never compiled into the app.
+    "design-system/**",
   ]),
 ]);
 

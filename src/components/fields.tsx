@@ -40,10 +40,10 @@ export function ViewRow({
   if (value == null || value === "") return null;
   return (
     <div className="flex flex-col gap-0.5 py-1.5">
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
+      <span className="eyebrow">{label}</span>
+      <span className="whitespace-pre-wrap text-base text-heading tabular-nums">
+        {value}
       </span>
-      <span className="whitespace-pre-wrap text-sm">{value}</span>
     </div>
   );
 }
@@ -280,7 +280,7 @@ export function SwitchField({
 }) {
   const [checked, setChecked] = useState(defaultChecked);
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
+    <div className="flex min-h-11 items-center justify-between gap-4 rounded-lg border border-border bg-card px-3 py-2">
       <Label className="text-sm">{label}</Label>
       <Switch
         checked={checked}

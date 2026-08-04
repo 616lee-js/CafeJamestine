@@ -2,6 +2,10 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth-shell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { login, type LoginState } from "./actions";
 
 export default function LoginPage() {
@@ -11,48 +15,38 @@ export default function LoginPage() {
   );
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <h1 className="mb-6 text-2xl font-semibold tracking-tight">Sign in</h1>
-        <form action={formAction} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Email
-            <input
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              className="h-12 rounded-lg border border-black/15 px-3 text-base outline-none focus:border-black/40"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            Password
-            <input
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              className="h-12 rounded-lg border border-black/15 px-3 text-base outline-none focus:border-black/40"
-            />
-          </label>
-          {state?.error && (
-            <p className="text-sm text-red-600">{state.error}</p>
-          )}
-          <button
-            type="submit"
-            disabled={pending}
-            className="h-12 rounded-full bg-foreground font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {pending ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-        <p className="mt-6 text-center text-sm text-zinc-600">
+    <AuthShell
+      title="Sign in"
+      footer={
+        <>
           No account?{" "}
-          <Link href="/signup" className="font-medium underline">
+          <Link href="/signup" className="font-medium">
             Create one
           </Link>
-        </p>
-      </div>
-    </main>
+        </>
+      }
+    >
+      <form action={formAction} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" name="email" type="email" autoComplete="email" required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
+        {/* The one pill button in the app. */}
+        <Button type="submit" size="touch" disabled={pending} className="w-full rounded-full">
+          {pending ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }

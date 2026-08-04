@@ -26,22 +26,63 @@ const badgeVariants = cva(
   }
 )
 
+// The three colour vocabularies, kept apart on purpose. `bag-*` and `session-*` answer
+// "what condition is this thing in?"; `phase-*` answers "where am I in this session?" and
+// belongs to the stepper alone. Never mix them.
+const TONES = {
+  "bag-frozen": "bg-bag-frozen-soft text-bag-frozen",
+  "bag-resting": "bg-bag-resting-soft text-bag-resting",
+  "bag-active": "bg-bag-active-soft text-bag-active",
+  "bag-finished": "bg-bag-finished-soft text-bag-finished",
+  "session-active": "bg-session-active-soft text-session-active",
+  "session-complete": "bg-session-complete-soft text-session-complete",
+  "phase-plan": "bg-phase-plan-soft text-phase-plan",
+  "phase-brew": "bg-phase-brew-soft text-phase-brew",
+  "phase-post": "bg-phase-post-soft text-phase-post",
+  "phase-taste": "bg-phase-taste-soft text-phase-taste",
+} as const
+
+export type BadgeTone = keyof typeof TONES
+
 function Badge({
   className,
   variant = "default",
+  tone,
+  dot = false,
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<"span"> &
-  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  VariantProps<typeof badgeVariants> & {
+    asChild?: boolean
+    /** Status or phase colouring. Overrides `variant`'s own colours when set. */
+    tone?: BadgeTone
+    /** Leading 8px dot, for statuses that are currently live. */
+    dot?: boolean
+  }) {
   const Comp = asChild ? Slot.Root : "span"
 
   return (
     <Comp
       data-slot="badge"
       data-variant={variant}
-      className={cn(badgeVariants({ variant }), className)}
+      data-tone={tone}
+      className={cn(
+        badgeVariants({ variant }),
+        tone && TONES[tone],
+        className
+      )}
       {...props}
-    />
+    >
+      {/* Slot takes exactly one child, so asChild badges render the dot themselves. */}
+      {dot && !asChild && (
+        <span
+          aria-hidden
+          className="size-2 shrink-0 rounded-full bg-current"
+        />
+      )}
+      {children}
+    </Comp>
   )
 }
 
