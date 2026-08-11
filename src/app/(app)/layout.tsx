@@ -18,6 +18,9 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: adminFlag } = await supabase.rpc("is_admin");
+  const admin = adminFlag === true;
+
   return (
     <div className="flex min-h-full flex-1 flex-col">
       {/* Global bar. Translucent + blurred so it stays visually distinct from any opaque
@@ -32,7 +35,7 @@ export default async function AppLayout({
           </Link>
           <PrimaryNav />
           <div className="ml-auto flex shrink-0 items-center gap-3">
-            <SecondaryNav />
+            <SecondaryNav isAdmin={admin} />
             <span aria-hidden className="hidden h-5 w-px bg-border sm:block" />
             <form action={signOut}>
               <Button variant="ghost" size="sm" type="submit">

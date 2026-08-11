@@ -221,6 +221,69 @@ export interface RecipeIngredient {
   updated_at: string;
 }
 
+// ---- Order management ----------------------------------------------------------------------
+
+export type MenuItemType = "coffee" | "specialty";
+export type OrderStatus = "active" | "cancelled" | "completed";
+
+export interface Profile {
+  user_id: string;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HomeCafeSession {
+  id: string;
+  user_id: string;
+  name: string | null;
+  is_active: boolean;
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MenuItem {
+  id: string;
+  user_id: string;
+  item_type: MenuItemType;
+  /** Set iff item_type = "coffee". The order view resolves this coffee's favorite recipe live. */
+  coffee_id: string | null;
+  /** Set iff item_type = "specialty". */
+  recipe_id: string | null;
+  public_name: string;
+  public_description: string | null;
+  position: number | null;
+  /** Presence on the menu IS availability — there is no separate sold-out state. */
+  is_on_menu: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Exactly what public_menu() returns to anonymous visitors — no source ids, no user_id. */
+export interface PublicMenuItem {
+  id: string;
+  item_type: MenuItemType;
+  public_name: string;
+  public_description: string | null;
+  position: number | null;
+}
+
+export interface Order {
+  id: string;
+  home_cafe_session_id: string;
+  menu_item_id: string;
+  visitor_name: string | null;
+  visitor_note: string | null;
+  received_at: string;
+  status: OrderStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+// ---- Feedback ------------------------------------------------------------------------------
+
 export type FeedbackKind = "bug" | "request";
 export const FEEDBACK_KINDS: FeedbackKind[] = ["bug", "request"];
 export type FeedbackStatus = "new" | "complete";

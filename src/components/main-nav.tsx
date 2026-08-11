@@ -12,7 +12,7 @@ const PRIMARY = [
   { href: "/recipes", label: "Recipes" },
 ];
 
-const SECONDARY = [
+const SECONDARY: { href: string; label: string }[] = [
   { href: "/equipment", label: "Equipment" },
   { href: "/reference", label: "Reference" },
   { href: "/feedback", label: "Feedback" },
@@ -49,11 +49,19 @@ export function PrimaryNav() {
   );
 }
 
-export function SecondaryNav() {
+// Menu and Orders only render for admins — non-admins would hit a redirect, and RLS would
+// refuse the data anyway.
+const ADMIN = [
+  { href: "/admin/menu", label: "Menu" },
+  { href: "/admin/orders", label: "Orders" },
+];
+
+export function SecondaryNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const isActive = useIsActive();
+  const items = isAdmin ? [...ADMIN, ...SECONDARY] : SECONDARY;
   return (
     <nav className="flex shrink-0 items-center gap-1">
-      {SECONDARY.map((item) => {
+      {items.map((item) => {
         const active = isActive(item.href);
         return (
           <Link

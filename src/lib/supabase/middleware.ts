@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/coffees", "/equipment", "/recipes", "/sessions", "/reference", "/brew", "/feedback"];
+// NOTE: "/menu" is deliberately absent — it is the public, no-auth ordering surface.
+// "/admin" only gets a signed-in check here; admin capability is enforced separately by
+// requireAdmin() in src/lib/admin.ts and by RLS on the underlying tables.
+const PROTECTED_PREFIXES = ["/coffees", "/equipment", "/recipes", "/sessions", "/reference", "/brew", "/feedback", "/admin"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 // Refreshes the auth session on every request and enforces route protection.
