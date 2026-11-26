@@ -1,17 +1,29 @@
 name: keep-alive
 
-# Pings Supabase ~3x/week (Sun/Wed/Fri 09:00 UTC) to generate real DB write activity so the
-# free-tier project is never auto-paused (pause triggers after 7 days idle; max gap here = 3 days).
-# A failed run turns red and GitHub emails the repo owner — the "fails loudly" requirement.
+# Pings Supabase HOURLY to generate continuous DB write activity.
+#
+# Why hourly and not 3x/week: Supabase's policy is "we MAY pause applications on the Free Plan
+# that exhibit LOW ACTIVITY in a 7-day period" — low, not zero, and discretionary. The previous
+# Sun/Wed/Fri schedule ran green yet the project was paused anyway on 2026-10-09 (keep_alive
+# .last_ping_at confirmed the 10-04 write had landed). Three writes a week clears "not zero"
+# while still reading as "low". Scheduled Actions are free and unmetered on public repos, so
+# ~720 pings/month costs nothing.
+#
+# This still does not GUARANTEE uptime — the policy has no published threshold to engineer
+# against. Supabase Pro is the only hard guarantee.
 on:
   schedule:
-    - cron: "0 9 * * 0,3,5"
+    - cron: "0 * * * *"
   workflow_dispatch: {}
 
 # Never run more than one at a time; a new run supersedes an in-flight one.
 concurrency:
   group: keep-alive
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   ping:
@@ -26,3 +38,33 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      # A red Action only sends email, which went unnoticed for two days during the 2026-10-09
+      # outage. Open ONE tracking issue per outage — if it is already open, say nothing, so an
+      # hourly schedule cannot spam. Close the issue when the backend is healthy again.
+      - name: Open outage issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: "Backend unreachable — keep-alive failing"
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          existing=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Issue #$existing already open; not duplicating."
+            exit 0
+          fi
+          {
+            echo "The hourly Supabase keep-alive ping failed."
+            echo
+            echo "Failing run: $RUN_URL"
+            echo
+            echo "Likely causes, in order:"
+            echo "1. The Supabase project is paused. Restore it from the dashboard; a ping cannot revive it."
+            echo "2. Restored, but PostgREST's schema cache is stale (RPC 404s while direct Postgres works)."
+            echo "   Fix: notify pgrst, 'reload schema';"
+            echo "3. SUPABASE_URL / SUPABASE_ANON_KEY repo secrets missing or rotated."
+            echo
+            echo "Close this issue once the ping is green again."
+          } > "$RUNNER_TEMP/outage.md"
+          gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/outage.md"
